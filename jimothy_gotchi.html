@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jimothy-Gotchi: Raccoon Virtual Pet</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: VT323 & Press Start 2P for vintage pixel LCD look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Default Classic Green LCD */
+      --lcd-bg: #8ca374;
+      --lcd-pixel: #1c2718;
+      --lcd-ghost: #7f9568;
+      --lcd-ui: rgba(28, 39, 24, 0.3);
+
+      /* Default Classic Shell */
+      --shell-bg-1: #2d6b52;
+      --shell-bg-2: #1e4a38;
+      --shell-bg-3: #122c22;
+      --shell-border: #0f251c;
+      --shell-radius: 52px;
+      --shell-bezel: #1b251e;
+      --shell-bezel-border: #0b1712;
+      --brand-text: #6ee7b7;
+      --btn-bg: rgba(2, 44, 34, 0.7);
+      --btn-border: rgba(5, 150, 105, 0.4);
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #1a221f 0%, #0d1210 100%);
+      font-family: 'Press Start 2P', monospace;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .lcd-screen {
+      background-color: var(--lcd-bg);
+      color: var(--lcd-pixel);
+      box-shadow: inset 3px 3px 10px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(255,255,255,0.25);
+      position: relative;
+    }
+
+    /* Pixel scanline & grain overlay */
+    .lcd-screen::before {
+      content: " ";
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%), 
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      opacity: 0.7;
+      z-index: 20;
+    }
+
+    /* Handheld egg shell gradient */
+    .toy-shell {
+      background: radial-gradient(circle at 35% 25%, var(--shell-bg-1) 0%, var(--shell-bg-2) 50%, var(--shell-bg-3) 100%);
+      border: 8px solid var(--shell-border);
+      border-radius: var(--shell-radius);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 6px 12px rgba(255, 255, 255, 0.18), inset 0 -8px 16px rgba(0, 0, 0, 0.6);
+      transition: border-radius 0.4s ease, background 0.4s ease, border-color 0.4s ease;
+    }
+
+    /* Metallic glitter speckles on shell */
+    .glitter-sparkles {
+      background-image: 
+        radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px),
+        radial-gradient(circle, rgba(160,225,180,0.5) 1.5px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,215,0,0.6) 1px, transparent 1px);
+      background-size: 38px 43px, 57px 51px, 73px 67px;
+    }
+
+    .keychain-ring {
+      box-shadow: inset 1px 1px 3px rgba(255,255,255,0.4), 2px 4px 8px rgba(0,0,0,0.6);
+    }
+
+    /* Rubber button styling */
+    .rubber-btn {
+      transition: all 0.08s ease;
+      box-shadow: 0 5px 0 #121914, 0 7px 10px rgba(0,0,0,0.5);
+    }
+    .rubber-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #121914, 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    /* Pixel Art Bobbing Animation */
+    @keyframes raccoonIdle {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-4px) scale(1.02); }
+    }
+    .idle-anim {
+      animation: raccoonIdle 1.1s steps(2, start) infinite;
+    }
+
+    @keyframes trashRaid {
+      0% { transform: rotate(0deg) translateX(0); }
+      25% { transform: rotate(-8deg) translateX(-6px); }
+      75% { transform: rotate(10deg) translateX(6px); }
+      100% { transform: rotate(0deg) translateX(0); }
+    }
+    .raid-anim {
+      animation: trashRaid 0.35s steps(2, start) infinite;
+    }
+
+    @keyframes hissShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-3px, 2px); }
+      40% { transform: translate(3px, -2px); }
+      60% { transform: translate(-3px, -2px); }
+      80% { transform: translate(3px, 2px); }
+    }
+    .shake-anim {
+      animation: hissShake 0.15s infinite;
+    }
+
+    /* Pixel art rendering crispness */
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Custom scrollbar for logs/menus */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--lcd-pixel);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-3 select-none text-slate-100">
+
+  <div class="relative flex flex-col items-center">
+    
+    <!-- Rusted Keyring / Twist-tie Chain at Top Left -->
+    <div class="absolute -top-10 left-8 z-0 flex flex-col items-center">
+      <div class="w-7 h-7 rounded-full border-4 border-amber-700 bg-transparent keychain-ring"></div>
+      <div class="w-3 h-8 bg-amber-800 -mt-1 rounded-sm rotate-6 shadow-md border-t border-amber-600"></div>
+      <!-- Chewed Yellow Twist-Tie -->
+      <div class="w-1.5 h-6 bg-yellow-400 -mt-2 -rotate-12 rounded-sm shadow-sm flex items-center justify-center">
+        <span class="w-0.5 h-full bg-yellow-600"></span>
+      </div>
+    </div>
+
+    <!-- Handheld Body Container -->
+    <div class="toy-shell glitter-sparkles w-80 sm:w-96 p-5 sm:p-7 relative z-10 flex flex-col items-center">
+      
+      <!-- Top Brand Header -->
+      <div class="w-full flex flex-col items-center px-3 pt-1 pb-3 gap-2">
+        <div class="w-full flex items-center justify-between">
+          <div class="flex items-center space-x-1">
+            <span class="inline-block w-2.5 h-2.5 rounded-full animate-pulse shadow-[0_0_8px_var(--brand-text)]" style="background-color: var(--brand-text);"></span>
+            <span class="text-[10px] tracking-wider font-bold drop-shadow" style="color: var(--brand-text);">BANDIT-PET</span>
+          </div>
+          <div class="text-[12px] tracking-widest font-extrabold uppercase" style="color: var(--brand-text);">
+            JIMOTHY·97
+          </div>
+        </div>
+        <!-- Audio & Notif Buttons -->
+        <div class="flex items-center justify-center space-x-2 mt-1">
+          <button id="deviceToggleBtn" class="text-xs rounded px-1.5 py-0.5 transition" style="background-color: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--brand-text);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--brand-text)'" title="Change Device Shape">📱</button>
+          <button id="colorToggleBtn" class="text-xs rounded px-1.5 py-0.5 transition" style="background-color: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--brand-text);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--brand-text)'" title="Change Shell Color">🎨</button>
+          <button id="lcdToggleBtn" class="text-xs rounded px-1.5 py-0.5 transition" style="background-color: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--brand-text);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--brand-text)'" title="Change Screen Backlight">💡</button>
+          <button id="webhookToggleBtn" class="text-xs rounded px-1.5 py-0.5 transition" style="background-color: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--brand-text);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--brand-text)'" title="Set Google Chat Webhook">💬</button>
+          <button id="notifToggleBtn" class="text-xs rounded px-1.5 py-0.5 transition" style="background-color: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--brand-text);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--brand-text)'" title="Toggle Notifications">🔕</button>
+          <button id="soundToggleBtn" class="text-xs rounded px-1.5 py-0.5 transition" style="background-color: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--brand-text);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--brand-text)'" title="Toggle Sound">🔊</button>
+        </div>
+      </div>
+
+      <div class="w-full p-3 rounded-2xl shadow-inner border-4" style="background-color: var(--shell-bezel); border-color: var(--shell-bezel-border);">
+        <div id="lcdScreen" class="lcd-screen w-full h-[290px] rounded-lg p-2.5 flex flex-col justify-between overflow-hidden" style="color: var(--lcd-pixel);">
+          
+          <!-- Top Status Icons & Evolution Rank -->
+          <div class="flex justify-between items-center text-[9px] border-b pb-1 font-mono" style="border-color: var(--lcd-ui);">
+            <span id="rankBadge" class="font-bold truncate max-w-[170px]">KIT BANDIT (AGE 1)</span>
+            <div class="flex items-center space-x-1.5">
+              <span id="timeClock" class="font-mono">03:14 AM</span>
+              <span id="statusMoon">🌙</span>
+            </div>
+          </div>
+
+          <!-- Meters Grid (Compact Pixel Indicators) -->
+          <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] my-1 border-b pb-1" style="border-color: var(--lcd-ui);">
+            <!-- Hunger / Trash -->
+            <div>
+              <div class="flex justify-between">
+                <span>TRASH:</span>
+                <span id="hungerNum">80%</span>
+              </div>
+              <div class="w-full h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);">
+                <div id="hungerBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 80%;"></div>
+              </div>
+            </div>
+
+            <!-- Chaos Level -->
+            <div>
+              <div class="flex justify-between">
+                <span>CHAOS:</span>
+                <span id="chaosNum">45%</span>
+              </div>
+              <div class="w-full h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);">
+                <div id="chaosBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 45%;"></div>
+              </div>
+            </div>
+
+            <!-- Grime / Grease -->
+            <div>
+              <div class="flex justify-between">
+                <span>GREASE:</span>
+                <span id="greaseNum">60%</span>
+              </div>
+              <div class="w-full h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);">
+                <div id="greaseBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 60%;"></div>
+              </div>
+            </div>
+
+            <!-- Energy / Stamina -->
+            <div>
+              <div class="flex justify-between">
+                <span>ENERGY:</span>
+                <span id="energyNum">70%</span>
+              </div>
+              <div class="w-full h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);">
+                <div id="energyBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 70%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Stage: Jimothy Pixel Character Canvas / Sprite -->
+          <div id="stageArea" class="relative flex-1 flex flex-col items-center justify-center min-h-[110px] overflow-hidden">
+            
+            <!-- Static LCD Printed Background -->
+            <svg id="stageBackground" class="absolute inset-0 w-full h-full pixelated z-0" viewBox="0 0 120 70" preserveAspectRatio="none">
+              <g style="fill: var(--lcd-pixel); stroke: var(--lcd-pixel);" opacity="0.18">
+                <!-- Left side: Brick Building -->
+                <rect x="0" y="0" width="35" height="70" style="fill: var(--lcd-pixel);" opacity="0.1" stroke="none" />
+                <line x1="35" y1="0" x2="35" y2="70" stroke-width="1.5" />
+                
+                <!-- Window -->
+                <rect x="6" y="10" width="20" height="26" fill="none" stroke-width="1.5" />
+                <line x1="6" y1="23" x2="26" y2="23" stroke-width="1" />
+                <line x1="16" y1="10" x2="16" y2="36" stroke-width="1" />
+                <!-- Sill -->
+                <rect x="4" y="36" width="24" height="2" stroke="none" />
+                
+                <!-- Brick patterns -->
+                <line x1="0" y1="46" x2="12" y2="46" stroke-width="1" />
+                <line x1="12" y1="46" x2="12" y2="52" stroke-width="1" />
+                <line x1="20" y1="52" x2="35" y2="52" stroke-width="1" />
+                <line x1="20" y1="52" x2="20" y2="58" stroke-width="1" />
+                <line x1="0" y1="60" x2="15" y2="60" stroke-width="1" />
+                <line x1="15" y1="60" x2="15" y2="66" stroke-width="1" />
+
+                <!-- Right side: Wooden Picket Fence -->
+                <rect x="75" y="30" width="6" height="40" fill="none" stroke-width="1" />
+                <polygon points="75,30 78,25 81,30" fill="none" stroke-width="1" stroke-linejoin="round" />
+                <rect x="85" y="35" width="6" height="35" fill="none" stroke-width="1" />
+                <polygon points="85,35 88,30 91,35" fill="none" stroke-width="1" stroke-linejoin="round" />
+                <rect x="95" y="28" width="6" height="42" fill="none" stroke-width="1" />
+                <polygon points="95,28 98,23 101,28" fill="none" stroke-width="1" stroke-linejoin="round" />
+                <rect x="105" y="32" width="6" height="38" fill="none" stroke-width="1" />
+                <polygon points="105,32 108,27 111,32" fill="none" stroke-width="1" stroke-linejoin="round" />
+                <!-- Fence beams -->
+                <line x1="70" y1="45" x2="120" y2="45" stroke-width="1.5" />
+                <line x1="70" y1="58" x2="120" y2="58" stroke-width="1.5" />
+
+                <!-- Powerlines & Moon -->
+                <path d="M 35,5 Q 75,20 120,0" fill="none" stroke-width="0.75" />
+                <path d="M 35,15 Q 75,30 120,10" fill="none" stroke-width="0.75" />
+                <path d="M 100,10 A 5,5 0 1,0 108,18 A 6,6 0 0,1 100,10 Z" style="fill: var(--lcd-pixel);" stroke="none" />
+
+                <!-- Distant Dumpster -->
+                <path d="M 42,45 L 68,45 L 68,65 L 42,65 Z" fill="none" stroke-width="1" />
+                <line x1="40" y1="45" x2="70" y2="45" stroke-width="1.5" />
+                <!-- Dumpster ridges -->
+                <line x1="46" y1="50" x2="46" y2="62" stroke-width="0.75" />
+                <line x1="51" y1="50" x2="51" y2="62" stroke-width="0.75" />
+                <line x1="56" y1="50" x2="56" y2="62" stroke-width="0.75" />
+                <line x1="61" y1="50" x2="61" y2="62" stroke-width="0.75" />
+
+                <!-- Horizon & Ground -->
+                <line x1="0" y1="65" x2="120" y2="65" stroke-width="1" />
+                <line x1="0" y1="68" x2="120" y2="68" stroke-width="2" />
+                
+                <!-- Pebbles -->
+                <circle cx="20" cy="66" r="0.5" />
+                <circle cx="38" cy="62" r="0.5" />
+                <circle cx="75" cy="66" r="0.5" />
+                <circle cx="110" cy="64" r="0.5" />
+              </g>
+            </svg>
+
+            <!-- Speech / Reaction Bubble -->
+            <div id="speechBubble" class="absolute top-0 px-2 py-0.5 text-[8px] rounded border opacity-0 transition-opacity duration-200 z-20 max-w-[200px] text-center" style="background-color: var(--lcd-pixel); color: var(--lcd-bg); border-color: var(--lcd-pixel);">
+              *SCUTTLE*
+            </div>
+
+            <!-- Jimothy Vector/Pixel SVG Graphics -->
+            <div id="jimothyGraphic" class="relative z-10 idle-anim cursor-pointer transition-transform duration-200">
+              <svg id="jimothySvg" width="100" height="90" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg" class="pixelated">
+                <!-- Tail with stripes -->
+                <path d="M 68 62 C 82 62, 94 56, 92 42 C 90 34, 80 34, 76 40 C 74 46, 75 52, 68 56 Z" style="fill: var(--lcd-pixel);" />
+                <path d="M 77 45 C 80 43, 85 45, 85 49" style="stroke: var(--lcd-bg);" stroke-width="3" stroke-linecap="round" />
+                <path d="M 72 52 C 78 50, 83 54, 83 57" style="stroke: var(--lcd-bg);" stroke-width="3" stroke-linecap="round" />
+
+                <!-- Raccoon Body -->
+                <ellipse cx="50" cy="56" rx="22" ry="18" style="fill: var(--lcd-pixel);" />
+                <!-- Chubby Belly Grime -->
+                <ellipse cx="49" cy="58" rx="14" ry="11" style="fill: var(--lcd-ghost);" />
+                <circle cx="47" cy="57" r="1.5" style="fill: var(--lcd-pixel);" />
+                <circle cx="53" cy="59" r="1.5" style="fill: var(--lcd-pixel);" />
+
+                <!-- Raccoon Ears -->
+                <polygon points="34,26 42,12 48,27" style="fill: var(--lcd-pixel);" />
+                <polygon points="37,24 42,16 46,25" style="fill: var(--lcd-ghost);" />
+
+                <polygon points="66,26 58,12 52,27" style="fill: var(--lcd-pixel);" />
+                <polygon points="63,24 58,16 54,25" style="fill: var(--lcd-ghost);" />
+
+                <!-- Raccoon Head -->
+                <ellipse cx="50" cy="35" rx="21" ry="15" style="fill: var(--lcd-pixel);" />
+
+                <!-- Mask Band (Lighter gray-green) -->
+                <ellipse cx="50" cy="36" rx="18" ry="8" style="fill: var(--lcd-ghost);" />
+
+                <!-- Eye Patches (Black Bandit Mask) -->
+                <ellipse cx="41" cy="35" rx="6" ry="5" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="59" cy="35" rx="6" ry="5" style="fill: var(--lcd-pixel);" />
+
+                <!-- Eyes (Pixel Dots) -->
+                <g id="jimothyEyes">
+                  <circle cx="41" cy="34" r="2.2" style="fill: var(--lcd-bg);" />
+                  <circle cx="42" cy="34" r="1.1" style="fill: var(--lcd-pixel);" />
+                  <circle cx="59" cy="34" r="2.2" style="fill: var(--lcd-bg);" />
+                  <circle cx="58" cy="34" r="1.1" style="fill: var(--lcd-pixel);" />
+                </g>
+
+                <!-- Snout & Nose -->
+                <ellipse cx="50" cy="41" rx="5" ry="3.5" style="fill: var(--lcd-bg);" />
+                <polygon points="48,40 52,40 50,42" style="fill: var(--lcd-pixel);" />
+                
+                <!-- Whiskers -->
+                <line x1="33" y1="39" x2="25" y2="38" style="stroke: var(--lcd-pixel);" stroke-width="1.5" />
+                <line x1="33" y1="42" x2="26" y2="44" style="stroke: var(--lcd-pixel);" stroke-width="1.5" />
+                <line x1="67" y1="39" x2="75" y2="38" style="stroke: var(--lcd-pixel);" stroke-width="1.5" />
+                <line x1="67" y1="42" x2="74" y2="44" style="stroke: var(--lcd-pixel);" stroke-width="1.5" />
+
+                <!-- Grabbies (Paws holding trash) -->
+                <g id="jimothyPaws">
+                  <ellipse cx="38" cy="56" rx="4" ry="3" style="fill: var(--lcd-pixel);" />
+                  <ellipse cx="62" cy="56" rx="4" ry="3" style="fill: var(--lcd-pixel);" />
+                </g>
+
+                <!-- Feet -->
+                <ellipse cx="38" cy="73" rx="5" ry="3.5" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="62" cy="73" rx="5" ry="3.5" style="fill: var(--lcd-pixel);" />
+
+                <!-- Optional Crown / Item Overlay Slot -->
+                <g id="crownSlot" style="display: none;">
+                  <polygon points="42,16 46,21 50,14 54,21 58,16 57,25 43,25" style="fill: var(--lcd-pixel);" />
+                  <circle cx="50" cy="19" r="1" style="fill: var(--lcd-bg);" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Environment Ground Trash Objects -->
+            <div id="groundProps" class="relative z-10 w-full flex justify-between items-end px-3 text-xs -mt-1 font-mono">
+              <span id="trashPropLeft">🥫</span>
+              <span id="shinyCountLabel" class="text-[8px] font-bold">✨ CAPS: <span id="capsVal">3</span></span>
+              <span id="trashPropRight">🗑️</span>
+            </div>
+
+            <!-- Mini-Game Overlay Canvas / Screen (Hidden by default) -->
+            <div id="miniGameScreen" class="absolute inset-0 p-2 flex flex-col justify-between hidden z-20" style="background-color: var(--lcd-bg);">
+              <div class="flex justify-between items-center text-[8px] font-bold border-b pb-1" style="border-color: var(--lcd-ui);">
+                <span id="gameTitle">MIDNIGHT RAID</span>
+                <span id="gameTimer">TIME: 15s</span>
+              </div>
+              <!-- Mini Game Arena -->
+              <div id="gameArena" class="relative flex-1 rounded border overflow-hidden my-1 flex items-center justify-center" style="background-color: var(--lcd-ghost); border-color: var(--lcd-ui);">
+                <!-- Dynamically generated game objects -->
+              </div>
+              <div class="text-[8px] text-center" id="gameInstructions">
+                TAP [A] DODGE | [B] LOOT
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Text / Dialogue / Sub-menu Log -->
+          <div id="bottomConsole" class="border-t pt-1 flex justify-between items-center text-[8.5px]" style="border-color: var(--lcd-ui);">
+            <p id="actionLog" class="truncate font-mono tracking-tight font-bold">JIMOTHY is sniffing the rug...</p>
+            <span id="activityDot" class="w-1.5 h-1.5 rounded-full animate-ping" style="background-color: var(--lcd-pixel);"></span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Button Descriptions & Layout -->
+      <div class="w-full mt-5 mb-2 flex items-center justify-around px-2">
+        
+        <!-- Button A (FEED) -->
+        <div class="flex flex-col items-center">
+          <button id="btnA" class="rubber-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-rose-600 border-2 border-rose-900 active:bg-rose-700 flex items-center justify-center text-white font-extrabold text-sm sm:text-base cursor-pointer shadow-lg">
+            A
+          </button>
+          <span class="text-[9px] mt-2 font-bold tracking-wider" style="color: var(--brand-text);">FEED</span>
+          <span class="text-[7px]" style="color: var(--brand-text); opacity: 0.7;">TRASH</span>
+        </div>
+
+        <!-- Button B (RAID / PLAY) -->
+        <div class="flex flex-col items-center -mt-2">
+          <button id="btnB" class="rubber-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-500 border-2 border-amber-800 active:bg-amber-600 flex items-center justify-center text-zinc-950 font-extrabold text-sm sm:text-base cursor-pointer shadow-lg">
+            B
+          </button>
+          <span class="text-[9px] mt-2 font-bold tracking-wider" style="color: var(--brand-text);">RAID</span>
+          <span class="text-[7px]" style="color: var(--brand-text); opacity: 0.7;">CHAOS</span>
+        </div>
+
+        <!-- Button C (SCOLD / GROOM) -->
+        <div class="flex flex-col items-center">
+          <button id="btnC" class="rubber-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cyan-600 border-2 border-cyan-900 active:bg-cyan-700 flex items-center justify-center text-white font-extrabold text-sm sm:text-base cursor-pointer shadow-lg">
+            C
+          </button>
+          <span class="text-[9px] mt-2 font-bold tracking-wider" style="color: var(--brand-text);">COAX</span>
+          <span class="text-[7px]" style="color: var(--brand-text); opacity: 0.7;">GRIME</span>
+        </div>
+
+      </div>
+
+      <!-- Quick Action Menu Drawer Tabs -->
+      <div class="w-full mt-3 grid grid-cols-5 gap-1 text-[8px] font-sans">
+        <button id="subDumpsterBtn" class="hover:brightness-125 border rounded-lg p-1.5 text-center transition" style="background-color: var(--btn-bg); border-color: var(--btn-border); color: var(--brand-text);">
+          🥫 Scraps
+        </button>
+        <button id="subAIBtn" class="hover:brightness-125 border rounded-lg p-1.5 text-center transition shadow-[0_0_8px_rgba(99,102,241,0.4)]" style="background-color: rgba(30, 27, 75, 0.8); border-color: rgba(67, 56, 202, 0.4); color: #c7d2fe;">
+          ✨ AI
+        </button>
+        <button id="subNapBtn" class="hover:brightness-125 border rounded-lg p-1.5 text-center transition" style="background-color: var(--btn-bg); border-color: var(--btn-border); color: var(--brand-text);">
+          💤 Nap
+        </button>
+        <button id="subLintBtn" class="hover:brightness-125 border rounded-lg p-1.5 text-center transition" style="background-color: var(--btn-bg); border-color: var(--btn-border); color: var(--brand-text);">
+          🧦 Lint
+        </button>
+        <button id="subResetBtn" class="hover:brightness-125 border rounded-lg p-1.5 text-center transition" style="background-color: rgba(76, 5, 25, 0.8); border-color: rgba(159, 18, 57, 0.4); color: #fecdd3;">
+          🔄 Reset
+        </button>
+      </div>
+
+      <!-- Secret Sound Speaker Grill -->
+      <div class="flex space-x-1.5 mt-3 opacity-30">
+        <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+      </div>
+
+    </div>
+
+    <!-- Handheld Instructions Footer -->
+    <div class="mt-4 max-w-sm text-center text-[10px] space-y-1" style="color: var(--brand-text); opacity: 0.8;">
+      <p class="font-bold" style="color: var(--brand-text); opacity: 1;">TIPS FOR RAISING JIMOTHY:</p>
+      <p>• Do <span class="text-rose-400 underline">NOT</span> wash him with soap! Roll him in dryer lint to maintain grime.</p>
+      <p>• High chaos + 10 shiny bottle caps evolves him into the <span class="text-amber-300">DUMPSTER EMPEROR</span>.</p>
+    </div>
+
+  </div>
+
+  <script>
+    /* 8-BIT AUDIO SYNTHESIS ENGINE (Using Web Audio API - zero external sound files) */
+    class RetroSound {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playTone(freq, type = 'square', duration = 0.08, gainVal = 0.08) {
+        if (this.muted) return;
+        try {
+          this.init();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      }
+
+      beep() {
+        this.playTone(880, 'square', 0.05, 0.05);
+      }
+
+      munch() {
+        if (this.muted) return;
+        this.init();
+        [220, 180, 260, 150].forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'triangle', 0.06, 0.1), idx * 60);
+        });
+      }
+
+      hiss() {
+        if (this.muted) return;
+        this.init();
+        // White noise burst for raccoon hiss
+        const bufferSize = this.ctx.sampleRate * 0.15;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+      }
+
+      scuttle() {
+        if (this.muted) return;
+        [440, 520, 660, 480, 700].forEach((f, i) => {
+          setTimeout(() => this.playTone(f, 'sawtooth', 0.04, 0.05), i * 40);
+        });
+      }
+
+      fanfare() {
+        if (this.muted) return;
+        const notes = [440, 554, 659, 880];
+        notes.forEach((n, idx) => {
+          setTimeout(() => this.playTone(n, 'square', 0.12, 0.1), idx * 90);
+        });
+      }
+
+      thud() {
+        this.playTone(90, 'triangle', 0.15, 0.15);
+      }
+    }
+
+    const sound = new RetroSound();
+
+    class PushNotifier {
+      constructor() {
+        this.enabled = false;
+        this.lastNotifTime = {};
+      }
+
+      async toggle() {
+        if (!("Notification" in window)) {
+          setLog("Notifications not supported in this browser.");
+          return false;
+        }
+
+        if (this.enabled) {
+          this.enabled = false;
+          return false;
+        }
+
+        if (Notification.permission === "granted") {
+          this.enabled = true;
+          this.testSend();
+          return true;
+        } else if (Notification.permission !== "denied") {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            this.enabled = true;
+            this.testSend();
+            return true;
+          } else {
+            setLog("Notification permission denied.");
+          }
+        } else {
+           setLog("Notifications blocked by browser.");
+        }
+        return false;
+      }
+      
+      testSend() {
+        if(this.enabled) new Notification("Jimothy-Gotchi", { body: "Notifications enabled! 🦝" });
+      }
+
+      send(type, title, body, cooldown = 60000) {
+        if (!this.enabled || !("Notification" in window) || Notification.permission !== "granted") return;
+        
+        const now = Date.now();
+        if (now - (this.lastNotifTime[type] || 0) < cooldown) return;
+        
+        this.lastNotifTime[type] = now;
+        try {
+          new Notification(title, { body: body });
+        } catch(e) {
+          console.warn("Notification failed", e);
+        }
+      }
+    }
+
+    const notifier = new PushNotifier();
+
+    const STATE_KEY = 'jimothy_tamagotchi_save';
+
+    let pet = {
+      name: "Jimothy",
+      ageMinutes: 1,
+      hunger: 75,       // High is well-fed
+      chaos: 50,        // High is mischievous
+      grease: 65,       // Grime & stench (higher is healthier for Jimothy!)
+      energy: 70,       // Stamina
+      shinyCaps: 3,     // Currency for evolution & bragging rights
+      stage: 'kit',     // 'kit', 'burglar', 'goblin', 'emperor'
+      isSleeping: false,
+      lastFed: Date.now(),
+      lastSaved: Date.now(),
+      inMiniGame: false
+    };
+
+    let currentDeviceIdx = 0;
+    let currentColorIdx = 0;
+    let currentLcdIdx = 0;
+
+    function saveState() {
+      pet.lastSaved = Date.now();
+      localStorage.setItem(STATE_KEY, JSON.stringify(pet));
+      localStorage.setItem('jimothy_theme_prefs', JSON.stringify({
+        device: currentDeviceIdx,
+        color: currentColorIdx,
+        lcd: currentLcdIdx
+      }));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(STATE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          pet = { ...pet, ...parsed };
+          pet.inMiniGame = false; // Never resume directly into a minigame
+          
+          if (pet.lastSaved) {
+            const now = Date.now();
+            const diffMs = now - pet.lastSaved;
+            const diffMinutes = Math.floor(diffMs / 60000);
+            const diff10s = Math.floor(diffMs / 10000); // Game loop ticks every 10s
+            
+            if (diff10s > 0) {
+              pet.ageMinutes += diffMinutes;
+              if (pet.isSleeping) {
+                pet.energy = Math.min(100, pet.energy + (8 * diff10s));
+                pet.hunger = Math.max(0, pet.hunger - (1 * diff10s));
+              } else {
+                pet.hunger = Math.max(0, pet.hunger - (2.5 * diff10s));
+                pet.chaos = Math.min(100, pet.chaos + (2 * diff10s));
+                pet.grease = Math.max(0, pet.grease - (1 * diff10s));
+                pet.energy = Math.max(0, pet.energy - (1.5 * diff10s));
+              }
+              console.log(`Jimothy lived through ${diff10s} ticks while you were away.`);
+            }
+          }
+        } catch(e) { console.error("Corrupted save data", e); }
+      }
+
+      const savedPrefs = localStorage.getItem('jimothy_theme_prefs');
+      if (savedPrefs) {
+        try {
+          const prefs = JSON.parse(savedPrefs);
+          currentDeviceIdx = prefs.device || 0;
+          currentColorIdx = prefs.color || 0;
+          currentLcdIdx = prefs.lcd || 0;
+        } catch(e) {}
+      }
+    }
+
+    // Trash Foods Menu
+    const TRASH_MENU = [
+      { name: "Soggy Fries", hunger: +18, chaos: +5, grease: +10, desc: "Slurped down 4 limp fries!" },
+      { name: "Fish Skeleton", hunger: +25, chaos: +10, grease: +15, desc: "Crunched the spine with glee!" },
+      { name: "Half a Donut", hunger: +35, chaos: +20, grease: +5, desc: "Sugar rush activated!" },
+      { name: "Fresh Broccoli", hunger: -10, chaos: +30, grease: -5, isGross: true, desc: "Hissed and chucked the greens!" }
+    ];
+
+    let currentFoodIdx = 0;
+
+    // DOM References
+    const hungerBar = document.getElementById('hungerBar');
+    const hungerNum = document.getElementById('hungerNum');
+    const chaosBar = document.getElementById('chaosBar');
+    const chaosNum = document.getElementById('chaosNum');
+    const greaseBar = document.getElementById('greaseBar');
+    const greaseNum = document.getElementById('greaseNum');
+    const energyBar = document.getElementById('energyBar');
+    const energyNum = document.getElementById('energyNum');
+    const rankBadge = document.getElementById('rankBadge');
+    const actionLog = document.getElementById('actionLog');
+    const speechBubble = document.getElementById('speechBubble');
+    const jimothyGraphic = document.getElementById('jimothyGraphic');
+    const crownSlot = document.getElementById('crownSlot');
+    const capsVal = document.getElementById('capsVal');
+    const timeClock = document.getElementById('timeClock');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const notifToggleBtn = document.getElementById('notifToggleBtn');
+    const webhookToggleBtn = document.getElementById('webhookToggleBtn');
+    
+    // Mini-Game DOM
+    const miniGameScreen = document.getElementById('miniGameScreen');
+    const gameArena = document.getElementById('gameArena');
+    const gameTimer = document.getElementById('gameTimer');
+    const gameTitle = document.getElementById('gameTitle');
+    const gameInstructions = document.getElementById('gameInstructions');
+
+    // Physical Buttons
+    const btnA = document.getElementById('btnA');
+    const btnB = document.getElementById('btnB');
+    const btnC = document.getElementById('btnC');
+
+    // Submenu Buttons
+    const subDumpsterBtn = document.getElementById('subDumpsterBtn');
+    const subAIBtn = document.getElementById('subAIBtn');
+    const subNapBtn = document.getElementById('subNapBtn');
+    const subLintBtn = document.getElementById('subLintBtn');
+    const subResetBtn = document.getElementById('subResetBtn');
+
+    function showReaction(text, duration = 1600) {
+      speechBubble.textContent = text;
+      speechBubble.style.opacity = '1';
+      setTimeout(() => {
+        speechBubble.style.opacity = '0';
+      }, duration);
+    }
+
+    function setLog(msg) {
+      actionLog.textContent = msg;
+    }
+
+    function triggerShake() {
+      jimothyGraphic.classList.remove('idle-anim');
+      jimothyGraphic.classList.add('shake-anim');
+      sound.hiss();
+      setTimeout(() => {
+        jimothyGraphic.classList.remove('shake-anim');
+        if (!pet.isSleeping) jimothyGraphic.classList.add('idle-anim');
+      }, 700);
+    }
+
+    function triggerRaidMotion() {
+      jimothyGraphic.classList.remove('idle-anim');
+      jimothyGraphic.classList.add('raid-anim');
+      sound.scuttle();
+      setTimeout(() => {
+        jimothyGraphic.classList.remove('raid-anim');
+        if (!pet.isSleeping) jimothyGraphic.classList.add('idle-anim');
+      }, 900);
+    }
+
+    function checkEvolution() {
+      const oldStage = pet.stage;
+      if (pet.shinyCaps >= 10 && pet.chaos >= 70) {
+        pet.stage = 'emperor';
+      } else if (pet.grease >= 75) {
+        pet.stage = 'goblin';
+      } else if (pet.chaos >= 60) {
+        pet.stage = 'burglar';
+      } else {
+        pet.stage = 'kit';
+      }
+
+      // Update badge and crown
+      let title = "KIT BANDIT";
+      if (pet.stage === 'burglar') title = "MIDNIGHT BURGLAR";
+      if (pet.stage === 'goblin') title = "FERAL SEWER GOBLIN";
+      if (pet.stage === 'emperor') {
+        title = "👑 DUMPSTER EMPEROR";
+        crownSlot.style.display = 'block';
+      } else {
+        crownSlot.style.display = 'none';
+      }
+
+      if (oldStage !== pet.stage) {
+        sound.fanfare();
+        showReaction("⚡ EVOLVED! ⚡", 2500);
+        notifier.send('evolve', 'Jimothy Evolved! ⚡', `Your pet is now a ${title}!`, 0);
+        notifyChat(`⚡ *EVOLUTION!* Jimothy mutated into a **${title}**!`);
+      }
+
+      rankBadge.textContent = `${title} (M:${pet.ageMinutes})`;
+    }
+
+    function updateHUD() {
+      // Clamping values 0 to 100
+      pet.hunger = Math.min(100, Math.max(0, pet.hunger));
+      pet.chaos = Math.min(100, Math.max(0, pet.chaos));
+      pet.grease = Math.min(100, Math.max(0, pet.grease));
+      pet.energy = Math.min(100, Math.max(0, pet.energy));
+
+      hungerBar.style.width = `${pet.hunger}%`;
+      hungerNum.textContent = `${Math.round(pet.hunger)}%`;
+
+      chaosBar.style.width = `${pet.chaos}%`;
+      chaosNum.textContent = `${Math.round(pet.chaos)}%`;
+
+      greaseBar.style.width = `${pet.grease}%`;
+      greaseNum.textContent = `${Math.round(pet.grease)}%`;
+
+      energyBar.style.width = `${pet.energy}%`;
+      energyNum.textContent = `${Math.round(pet.energy)}%`;
+
+      capsVal.textContent = pet.shinyCaps;
+
+      checkEvolution();
+      updateClockDisplay();
+      
+      saveState();
+    }
+
+    function updateClockDisplay() {
+      const now = new Date();
+      let hrs = now.getHours().toString().padStart(2, '0');
+      let mins = now.getMinutes().toString().padStart(2, '0');
+      timeClock.textContent = `${hrs}:${mins}`;
+    }
+
+    // ACTION A: FEED TRASH
+    function feedJimothy() {
+      if (pet.inMiniGame) return;
+      if (pet.isSleeping) {
+        showReaction("Zzz... (Asleep)");
+        sound.beep();
+        return;
+      }
+
+      const food = TRASH_MENU[currentFoodIdx];
+      currentFoodIdx = (currentFoodIdx + 1) % TRASH_MENU.length;
+
+      if (food.isGross) {
+        // Broccoli rejection!
+        triggerShake();
+        showReaction("🤮 *HISS!* GROSS!");
+        setLog(`Refused ${food.name}! Threw it.`);
+        pet.chaos += food.chaos;
+      } else {
+        sound.munch();
+        triggerRaidMotion();
+        pet.hunger += food.hunger;
+        pet.chaos += food.chaos;
+        pet.grease += food.grease;
+        showReaction(`*NOM* ${food.name}!`);
+        setLog(food.desc);
+      }
+      updateHUD();
+    }
+
+    // ACTION B: RAID / MINI-GAME
+    function startCanRaidGame() {
+      if (pet.inMiniGame) return;
+      if (pet.isSleeping) {
+        wakeUp();
+        return;
+      }
+      if (pet.energy < 15) {
+        showReaction("Too pooped to raid!");
+        setLog("Jimothy is collapsed on a cardboard box.");
+        sound.thud();
+        return;
+      }
+
+      sound.scuttle();
+      initMiniGame();
+    }
+
+    // ACTION C: SCOLD / COAX / ROLL IN LINT
+    function scoldOrCoax() {
+      if (pet.inMiniGame) return;
+      if (pet.isSleeping) {
+        wakeUp();
+        return;
+      }
+
+      if (pet.chaos > 70) {
+        // High chaos: gentle scold calms him down slightly and rewards shiny keys
+        sound.beep();
+        pet.chaos -= 20;
+        pet.shinyCaps += 1;
+        showReaction("Discovered shiny key!");
+        setLog("Jimothy handed over a stolen shiny key.");
+      } else {
+        // Regular coaxing: roll in lint to restore sacred grease
+        sound.scuttle();
+        pet.grease += 15;
+        pet.chaos += 5;
+        showReaction("Rolled in dryer lint!");
+        setLog("Freshly coated in pristine dryer fluff.");
+      }
+      updateHUD();
+    }
+
+    // Bedtime / Nap Toggle
+    function toggleNap() {
+      if (pet.inMiniGame) return;
+      pet.isSleeping = !pet.isSleeping;
+
+      if (pet.isSleeping) {
+        jimothyGraphic.classList.remove('idle-anim');
+        showReaction("💤 Snoring loudly...");
+        setLog("Jimothy curled into a greasy ball.");
+        sound.beep();
+      } else {
+        wakeUp();
+      }
+    }
+
+    function wakeUp() {
+      pet.isSleeping = false;
+      jimothyGraphic.classList.add('idle-anim');
+      showReaction("👀 Awake & Ferocious!");
+      setLog("Jimothy's eyes popped open in search of bins.");
+      sound.beep();
+    }
+
+    let miniGameInterval = null;
+    let miniGameTimerVal = 12;
+    let canPosition = 50;
+    let dogWaking = 0;
+    let cansTipped = 0;
+
+    function initMiniGame() {
+      pet.inMiniGame = true;
+      miniGameTimerVal = 12;
+      cansTipped = 0;
+      dogWaking = 0;
+      canPosition = 50;
+
+      miniGameScreen.classList.remove('hidden');
+      gameTitle.textContent = "MIDNIGHT CAN RAID";
+      gameInstructions.textContent = "[A] TIP CAN | [B] SNEAK/HIDE";
+
+      renderGameScreen();
+
+      miniGameInterval = setInterval(() => {
+        miniGameTimerVal--;
+        gameTimer.textContent = `TIME: ${miniGameTimerVal}s`;
+
+        // Neighbor's dog alertness slowly ticks up randomly
+        if (Math.random() > 0.45) {
+          dogWaking += 1;
+        }
+
+        renderGameScreen();
+
+        if (dogWaking >= 4) {
+          endMiniGame(false, "BARK! The neighbor's dog caught you!");
+        } else if (miniGameTimerVal <= 0) {
+          endMiniGame(true, `Raid complete! Tipped ${cansTipped} bins!`);
+        }
+      }, 1000);
+    }
+
+    function renderGameScreen() {
+      const dogIcons = ["😴 Dog: Asleep", "🐕 Dog: Stirring", "👀 Dog: Watching!", "🚨 Dog: BARKING!"];
+      gameArena.innerHTML = `
+        <div class="w-full h-full flex flex-col justify-between p-2" style="color: var(--lcd-pixel);">
+          <div class="flex justify-between text-[7.5px] font-bold">
+            <span>BINS TIPPED: ${cansTipped}</span>
+            <span>${dogIcons[Math.min(3, dogWaking)]}</span>
+          </div>
+
+          <!-- Mid Action Field -->
+          <div class="flex items-center justify-around text-2xl py-2">
+            <span class="text-xl">🦝</span>
+            <span class="text-3xl animate-bounce">🗑️</span>
+            <span class="text-sm font-bold px-1.5 py-0.5 rounded" style="background-color: var(--lcd-pixel); color: var(--lcd-bg);">
+              ${dogWaking > 1 ? "⚠️ HIDE!" : "LOOT IT!"}
+            </span>
+          </div>
+
+          <div class="w-full h-1.5 rounded overflow-hidden" style="background-color: var(--lcd-ui);">
+            <div class="h-full" style="background-color: var(--lcd-pixel); width: ${(dogWaking / 4) * 100}%;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function miniGameHandleButton(btn) {
+      if (!pet.inMiniGame) return;
+
+      if (btn === 'A') {
+        // Attempt to tip the can
+        if (dogWaking >= 3) {
+          // Tipped while dog was watching!
+          sound.hiss();
+          dogWaking += 2;
+          renderGameScreen();
+        } else {
+          sound.munch();
+          cansTipped++;
+          pet.hunger += 10;
+          pet.chaos += 8;
+          pet.grease += 6;
+          // chance of shiny cap
+          if (Math.random() > 0.4) {
+            pet.shinyCaps += 1;
+            sound.fanfare();
+          }
+          dogWaking = Math.min(3, dogWaking + 1);
+          renderGameScreen();
+        }
+      } else if (btn === 'B') {
+        // Sneak & Hide under bushes to calm the dog
+        sound.scuttle();
+        dogWaking = Math.max(0, dogWaking - 1);
+        renderGameScreen();
+      }
+    }
+
+    function endMiniGame(won, message) {
+      clearInterval(miniGameInterval);
+      pet.inMiniGame = false;
+      miniGameScreen.classList.add('hidden');
+      pet.energy -= 20;
+
+      if (won) {
+        sound.fanfare();
+        showReaction("👑 LOOT SECURED!");
+      } else {
+        triggerShake();
+        showReaction("💨 SCRAMBLED HOME!");
+      }
+      setLog(message);
+      updateHUD();
+    }
+
+    setInterval(() => {
+      pet.ageMinutes += 1;
+
+      if (pet.isSleeping) {
+        // Sleeping restores energy, slows hunger decay
+        pet.energy = Math.min(100, pet.energy + 8);
+        pet.hunger = Math.max(0, pet.hunger - 1);
+      } else {
+        // Awake: hunger depletes, chaos creeps up, grease slowly wears off
+        pet.hunger = Math.max(0, pet.hunger - 2.5);
+        pet.chaos = Math.min(100, pet.chaos + 2);
+        pet.grease = Math.max(0, pet.grease - 1);
+        pet.energy = Math.max(0, pet.energy - 1.5);
+
+        // Random hilarious events when unsupervised
+        const randomRoll = Math.random();
+        if (randomRoll < 0.25) {
+          triggerRandomAntics();
+        } else if (randomRoll < 0.6) {
+          const idleThoughts = [
+            "Jimothy is judging your browser history.",
+            "Jimothy is contemplating the infinite void.",
+            "Jimothy wonders if hotdogs are sandwiches.",
+            "Jimothy is licking the inside of the screen.",
+            "Jimothy is doing trash-yoga (Downward Dumpster).",
+            "Jimothy sneezed and terrified himself.",
+            "Jimothy is mapping out the local sewer system.",
+            "Jimothy demands a sacrifice of wet cat food.",
+            "Jimothy is practicing his feral hiss.",
+            "Jimothy is vibrating at a frequency that breaks glass.",
+            "Jimothy found a lint ball and named it 'Greg'.",
+            "Jimothy is staring at a ghost only he can see."
+          ];
+          setLog(idleThoughts[Math.floor(Math.random() * idleThoughts.length)]);
+        }
+
+        // Trigger notifications for critical states
+        if (pet.hunger < 20) {
+          notifier.send('hunger', 'Jimothy is Starving! 🥫', 'Feed him some trash before he eats your socks!', 120000);
+          if (Math.random() < 0.2) notifyChat(`🚨 *STARVING:* Feed Jimothy some trash before he eats the server cables! (Hunger: ${Math.round(pet.hunger)}%)`);
+        } else if (pet.chaos > 85) {
+          notifier.send('chaos', 'Absolute Havoc! 🔥', 'Jimothy is destroying the house! Time to coax him.', 120000);
+          if (Math.random() < 0.2) notifyChat(`🔥 *HAVOC:* Jimothy is completely out of control! (Chaos: ${Math.round(pet.chaos)}%)`);
+        }
+      }
+
+      updateHUD();
+    }, 10000); // Ticks every 10 seconds for engaging interactive pace
+
+    function triggerRandomAntics() {
+      const events = [
+        { text: "Chewed through an HDMI cable!", chaos: +10 },
+        { text: "Wedged behind the digital fridge!", chaos: +5, grease: +8 },
+        { text: "Hoarded 3 shiny caps in sofa cushions!", caps: +3 },
+        { text: "Broke into the mainframe!", hunger: +10, chaos: +12 },
+        { text: "Invested your savings in TrashCoin!", chaos: +20 },
+        { text: "Started a cult with three digital roaches.", chaos: +10, grease: +5 },
+        { text: "Hacked the Pentagon using a half-eaten modem.", chaos: +25 },
+        { text: "Rubbed a slice of pizza on his face.", grease: +15, hunger: +5 },
+        { text: "Found a cursed amulet in the gutter!", chaos: +30, caps: +1 },
+        { text: "Rolled in a mysterious glowing puddle.", grease: +20, energy: +10 },
+        { text: "Knocked over a virtual potted plant.", chaos: +12 },
+        { text: "Ordered 500 cans of tuna on your credit card.", hunger: +20, chaos: +15 }
+      ];
+      const ev = events[Math.floor(Math.random() * events.length)];
+      if (ev.chaos) pet.chaos = Math.min(100, pet.chaos + ev.chaos);
+      if (ev.grease) pet.grease = Math.min(100, pet.grease + ev.grease);
+      if (ev.caps) pet.shinyCaps += ev.caps;
+      if (ev.hunger) pet.hunger = Math.min(100, pet.hunger + ev.hunger);
+      if (ev.energy) pet.energy = Math.min(100, pet.energy + ev.energy);
+
+      showReaction("👀 *CRASH!*");
+      setLog(ev.text);
+      sound.beep();
+
+      // Notify if a random chaotic event occurs
+      if (pet.chaos > 50 && ev.chaos) {
+        notifier.send('antics', 'Crash! Bang! 💥', ev.text, 90000);
+        notifyChat(`💥 *CHAOTIC ANTICS:* ${ev.text} (Chaos: ${Math.round(pet.chaos)}%)`);
+      }
+    }
+
+    // Physical Buttons Wiring
+    btnA.addEventListener('click', () => {
+      sound.beep();
+      if (pet.inMiniGame) {
+        miniGameHandleButton('A');
+      } else {
+        feedJimothy();
+      }
+    });
+
+    btnB.addEventListener('click', () => {
+      sound.beep();
+      if (pet.inMiniGame) {
+        miniGameHandleButton('B');
+      } else {
+        startCanRaidGame();
+      }
+    });
+
+    btnC.addEventListener('click', () => {
+      sound.beep();
+      if (pet.inMiniGame) {
+        // Can also be used to quickly cancel mini-game
+        endMiniGame(false, "Abandoned the raid early.");
+      } else {
+        scoldOrCoax();
+      }
+    });
+
+    // Submenu Buttons
+    subDumpsterBtn.addEventListener('click', () => {
+      feedJimothy();
+    });
+
+    subNapBtn.addEventListener('click', () => {
+      toggleNap();
+    });
+
+    subLintBtn.addEventListener('click', () => {
+      sound.scuttle();
+      pet.grease = Math.min(100, pet.grease + 25);
+      showReaction("✨ Fresh Dryer Grime!");
+      setLog("Coated Jimothy in warm, linty goodness.");
+      updateHUD();
+    });
+
+    subResetBtn.addEventListener('click', () => {
+      sound.beep();
+      pet = {
+        name: "Jimothy",
+        ageMinutes: 1,
+        hunger: 80,
+        chaos: 45,
+        grease: 60,
+        energy: 70,
+        shinyCaps: 3,
+        stage: 'kit',
+        isSleeping: false,
+        lastFed: Date.now(),
+        lastSaved: Date.now(),
+        inMiniGame: false
+      };
+      if (pet.inMiniGame) clearInterval(miniGameInterval);
+      miniGameScreen.classList.add('hidden');
+      wakeUp();
+      showReaction("🐣 REBORN KIT!");
+      setLog("A fresh Jimothy crawled out of the recycling bin.");
+      updateHUD();
+    });
+
+    // Tap Jimothy sprite directly for playful tickle / purr
+    jimothyGraphic.addEventListener('click', () => {
+      if (pet.inMiniGame || pet.isSleeping) return;
+
+      const pokes = [
+        { rxn: "🐾 *GNAW!*", log: "Jimothy playfully bit your index finger.", sound: "munch", chaos: 4 },
+        { rxn: "🤬 *HISS!*", log: "Jimothy hates being perceived.", sound: "hiss", chaos: 8 },
+        { rxn: "✨ *PURR*", log: "Jimothy vibrated like a broken lawnmower.", sound: "scuttle", chaos: -2, grease: 2 },
+        { rxn: "💨 *POOF*", log: "Jimothy used Smokescreen! (It's just dust).", sound: "thud", chaos: 5 },
+        { rxn: "👀 *STARE*", log: "Jimothy is stealing your soul through eye contact.", sound: "beep", chaos: 1 },
+        { rxn: "🗑️ *SNATCH*", log: "Jimothy pickpocketed you for a shiny cap!", sound: "fanfare", caps: 1, chaos: 10 }
+      ];
+      
+      const p = pokes[Math.floor(Math.random() * pokes.length)];
+      
+      sound[p.sound]();
+      if (p.chaos) pet.chaos = Math.min(100, Math.max(0, pet.chaos + p.chaos));
+      if (p.grease) pet.grease = Math.min(100, pet.grease + p.grease);
+      if (p.caps) pet.shinyCaps += p.caps;
+
+      showReaction(p.rxn);
+      setLog(p.log);
+      
+      if (p.sound === 'hiss') {
+          triggerShake();
+      } else {
+          // Playful tap bump animation
+          jimothyGraphic.classList.remove('idle-anim');
+          jimothyGraphic.style.transform = 'scale(0.95)';
+          setTimeout(() => { 
+              jimothyGraphic.style.transform = 'scale(1)';
+              if (!pet.isSleeping) jimothyGraphic.classList.add('idle-anim'); 
+          }, 150);
+      }
+
+      updateHUD();
+    });
+
+    // Sound toggle
+    soundToggleBtn.addEventListener('click', () => {
+      const isMuted = sound.toggleMute();
+      soundToggleBtn.textContent = isMuted ? '🔇' : '🔊';
+      if (isMuted) {
+        soundToggleBtn.style.color = '#fb7185';
+        soundToggleBtn.onmouseout = () => { soundToggleBtn.style.color = '#fb7185'; };
+      } else {
+        soundToggleBtn.style.color = 'var(--brand-text)';
+        soundToggleBtn.onmouseout = () => { soundToggleBtn.style.color = 'var(--brand-text)'; };
+      }
+    });
+
+    // Notification toggle
+    notifToggleBtn.addEventListener('click', async () => {
+      const isEnabled = await notifier.toggle();
+      notifToggleBtn.textContent = isEnabled ? '🔔' : '🔕';
+      if (isEnabled) {
+        notifToggleBtn.style.color = '#fcd34d';
+        notifToggleBtn.onmouseout = () => { notifToggleBtn.style.color = '#fcd34d'; };
+      } else {
+        notifToggleBtn.style.color = 'var(--brand-text)';
+        notifToggleBtn.onmouseout = () => { notifToggleBtn.style.color = 'var(--brand-text)'; };
+      }
+    });
+
+    // Keyboard controls (Arrow keys / A, B, C / Space)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'a' || e.key === 'A' || e.key === '1') {
+        btnA.click();
+      } else if (e.key === 'b' || e.key === 'B' || e.key === '2') {
+        btnB.click();
+      } else if (e.key === 'c' || e.key === 'C' || e.key === '3') {
+        btnC.click();
+      }
+    });
+
+    // ==========================================
+    // GOOGLE INTEGRATIONS: Chat & Gemini AI
+    // ==========================================
+    
+    // 1. Google Chat Webhook Integration
+    let chatWebhookUrl = localStorage.getItem('jimothy_chat_webhook') || "";
+    
+    webhookToggleBtn.addEventListener('click', () => {
+      const url = prompt("Enter a Google Chat Webhook URL to let Jimothy spam your team channel (Leave blank to disable):", chatWebhookUrl);
+      if (url !== null) {
+        chatWebhookUrl = url.trim();
+        localStorage.setItem('jimothy_chat_webhook', chatWebhookUrl);
+        if (chatWebhookUrl) {
+           setLog("Chat Webhook linked! He's online...");
+           notifyChat("🦝 *Jimothy has entered the chat.* Hide your trash.");
+        } else {
+           setLog("Chat Webhook disconnected.");
+        }
+      }
+    });
+
+    function notifyChat(message) {
+      if (!chatWebhookUrl) return;
+      fetch(chatWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message })
+      }).catch(e => console.error("Chat Webhook Error:", e));
+    }
+    
+    // 2. Gemini API Infinite Trash Generation
+    let isGeneratingAI = false;
+    subAIBtn.addEventListener('click', async () => {
+      if (isGeneratingAI || pet.inMiniGame || pet.isSleeping) return;
+      isGeneratingAI = true;
+      setLog("Consulting the AI Dumpster...");
+      sound.scuttle();
+      jimothyGraphic.classList.add('shake-anim');
+      
+      try {
+        const apiKey = ""; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        
+        const payload = {
+            contents: [{ parts: [{ text: "Generate a new trash item for Jimothy the raccoon." }] }],
+            systemInstruction: {
+                parts: [{ text: "You are generating items for a retro virtual pet game. Return ONLY a valid JSON object matching the requested schema." }]
+            },
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        name: { type: "STRING", description: "Name of the trash/food (e.g. 'Radioactive Sourdough')" },
+                        hunger: { type: "INTEGER", description: "Value from -10 to 40. High is filling." },
+                        chaos: { type: "INTEGER", description: "Value from 0 to 30. Weird items give more chaos." },
+                        grease: { type: "INTEGER", description: "Value from -10 to 30. Dirty items give grease." },
+                        desc: { type: "STRING", description: "Short funny action log under 40 chars." },
+                        isGross: { type: "BOOLEAN", description: "True if it's healthy/clean (raccoons hate this), false if gross trash (which they love)" }
+                    },
+                    required: ["name", "hunger", "chaos", "grease", "desc", "isGross"]
+                }
+            }
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        jimothyGraphic.classList.remove('shake-anim');
+
+        if (result.candidates && result.candidates[0].content) {
+            const aiFood = JSON.parse(result.candidates[0].content.parts[0].text);
+            
+            if (aiFood.isGross) {
+                triggerShake();
+                showReaction(`🤮 ${aiFood.name}!`);
+                setLog(`AI: ${aiFood.desc}`);
+                pet.chaos += aiFood.chaos;
+            } else {
+                sound.munch();
+                triggerRaidMotion();
+                pet.hunger += aiFood.hunger;
+                pet.chaos += aiFood.chaos;
+                pet.grease += aiFood.grease;
+                showReaction(`*NOM* ${aiFood.name}!`);
+                setLog(`AI: ${aiFood.desc}`);
+                
+                if (aiFood.chaos > 15) {
+                   notifyChat(`✨ *AI Forage:* Jimothy just devoured an AI-generated **${aiFood.name}**! (${aiFood.desc})`);
+                }
+            }
+            updateHUD();
+        } else {
+            setLog("AI Dumpster was empty.");
+        }
+      } catch (e) {
+        jimothyGraphic.classList.remove('shake-anim');
+        console.error("Gemini API Error:", e);
+        setLog("AI Dimension closed! (API Error)");
+      }
+      isGeneratingAI = false;
+    });
+
+    // ==========================================
+    // DEVICE & THEME SYSTEM
+    // ==========================================
+
+    const deviceShapes = [
+      { name: "Classic Egg", radius: "52px" },
+      { name: "Retro Brick", radius: "12px" },
+      { name: "Teardrop", radius: "50% 50% 50% 50% / 30% 30% 70% 70%" },
+      { name: "Game Box", radius: "12px 12px 40px 40px" }
+    ];
+
+    const shellColors = [
+      { name: "Swamp Green", bg1: "#2d6b52", bg2: "#1e4a38", bg3: "#122c22", border: "#0f251c", bezel: "#1b251e", bezelBorder: "#0b1712", brand: "#6ee7b7", btnBg: "rgba(2, 44, 34, 0.7)", btnBorder: "rgba(5, 150, 105, 0.4)" },
+      { name: "Atomic Purple", bg1: "#8b5cf6", bg2: "#6d28d9", bg3: "#4c1d95", border: "#2e1065", bezel: "#2e1065", bezelBorder: "#170833", brand: "#c4b5fd", btnBg: "rgba(46, 16, 101, 0.7)", btnBorder: "rgba(109, 40, 217, 0.4)" },
+      { name: "Hot Pink", bg1: "#f472b6", bg2: "#db2777", bg3: "#9d174d", border: "#831843", bezel: "#4a0b25", bezelBorder: "#250512", brand: "#fbcfe8", btnBg: "rgba(80, 7, 36, 0.7)", btnBorder: "rgba(219, 39, 119, 0.4)" },
+      { name: "Midnight Black", bg1: "#3f3f46", bg2: "#27272a", bg3: "#18181b", border: "#09090b", bezel: "#111113", bezelBorder: "#000000", brand: "#a1a1aa", btnBg: "rgba(24, 24, 27, 0.7)", btnBorder: "rgba(82, 82, 91, 0.4)" },
+      { name: "Faded Yellow", bg1: "#fde047", bg2: "#eab308", bg3: "#a16207", border: "#713f12", bezel: "#3f230a", bezelBorder: "#1c0f04", brand: "#fef08a", btnBg: "rgba(66, 32, 6, 0.7)", btnBorder: "rgba(202, 138, 4, 0.4)" },
+      { name: "Glacier Blue", bg1: "#0284c7", bg2: "#0369a1", bg3: "#075985", border: "#082f49", bezel: "#051e2e", bezelBorder: "#020f17", brand: "#bae6fd", btnBg: "rgba(8, 47, 73, 0.7)", btnBorder: "rgba(2, 132, 199, 0.4)" }
+    ];
+
+    const lcdThemes = [
+      { name: "Classic Green", bg: "#8ca374", pixel: "#1c2718", ghost: "#758c5f", ui: "rgba(28, 39, 24, 0.3)" },
+      { name: "Ghost Blue", bg: "#bae6fd", pixel: "#0c4a6e", ghost: "#7dd3fc", ui: "rgba(12, 74, 110, 0.3)" },
+      { name: "Virtual Red", bg: "#18181b", pixel: "#ef4444", ghost: "#7f1d1d", ui: "rgba(239, 68, 68, 0.3)" },
+      { name: "Sepia Boy", bg: "#c2c5aa", pixel: "#333d29", ghost: "#a4ac86", ui: "rgba(51, 61, 41, 0.3)" },
+      { name: "Amber Terminal", bg: "#27272a", pixel: "#fbbf24", ghost: "#b45309", ui: "rgba(251, 191, 36, 0.3)" }
+    ];
+
+    function applyDeviceShape() {
+      const shape = deviceShapes[currentDeviceIdx];
+      document.documentElement.style.setProperty('--shell-radius', shape.radius);
+    }
+
+    function applyShellColor() {
+      const color = shellColors[currentColorIdx];
+      document.documentElement.style.setProperty('--shell-bg-1', color.bg1);
+      document.documentElement.style.setProperty('--shell-bg-2', color.bg2);
+      document.documentElement.style.setProperty('--shell-bg-3', color.bg3);
+      document.documentElement.style.setProperty('--shell-border', color.border);
+      document.documentElement.style.setProperty('--shell-bezel', color.bezel);
+      document.documentElement.style.setProperty('--shell-bezel-border', color.bezelBorder);
+      document.documentElement.style.setProperty('--brand-text', color.brand);
+      document.documentElement.style.setProperty('--btn-bg', color.btnBg);
+      document.documentElement.style.setProperty('--btn-border', color.btnBorder);
+    }
+
+    function applyLcdTheme() {
+      const lcd = lcdThemes[currentLcdIdx];
+      document.documentElement.style.setProperty('--lcd-bg', lcd.bg);
+      document.documentElement.style.setProperty('--lcd-pixel', lcd.pixel);
+      document.documentElement.style.setProperty('--lcd-ghost', lcd.ghost);
+      document.documentElement.style.setProperty('--lcd-ui', lcd.ui);
+    }
+
+    document.getElementById('deviceToggleBtn').addEventListener('click', () => {
+      sound.beep();
+      currentDeviceIdx = (currentDeviceIdx + 1) % deviceShapes.length;
+      applyDeviceShape();
+      saveState();
+      setLog(`Device: ${deviceShapes[currentDeviceIdx].name}`);
+    });
+
+    document.getElementById('colorToggleBtn').addEventListener('click', () => {
+      sound.beep();
+      currentColorIdx = (currentColorIdx + 1) % shellColors.length;
+      applyShellColor();
+      saveState();
+      setLog(`Shell Color: ${shellColors[currentColorIdx].name}`);
+    });
+
+    document.getElementById('lcdToggleBtn').addEventListener('click', () => {
+      sound.beep();
+      currentLcdIdx = (currentLcdIdx + 1) % lcdThemes.length;
+      applyLcdTheme();
+      saveState();
+      setLog(`LCD Theme: ${lcdThemes[currentLcdIdx].name}`);
+    });
+
+    // Initial launch and load state
+    loadState();
+    applyDeviceShape();
+    applyShellColor();
+    applyLcdTheme();
+    updateHUD();
+
+    if (pet.isSleeping) {
+       jimothyGraphic.classList.remove('idle-anim');
+       setLog("Jimothy is fast asleep.");
+    } else {
+       setLog("Jimothy emerged from the recycling bin.");
+    }
+  </script>
+</body>
+</html>
