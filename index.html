@@ -661,6 +661,39 @@
       localStorage.setItem(STATE_KEY, JSON.stringify(pet));
     }
 
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STATE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          pet = { ...pet, ...parsed };
+          pet.inMiniGame = false; // Never resume directly into a minigame
+          
+          if (pet.lastSaved) {
+            const now = Date.now();
+            const diffMs = now - pet.lastSaved;
+            const diffMinutes = Math.floor(diffMs / 60000);
+            const diff10s = Math.floor(diffMs / 10000); // Game loop ticks every 10s
+            
+            if (diff10s > 0) {
+              pet.ageMinutes += diffMinutes;
+              if (pet.isSleeping) {
+                // Only energy regenerates while asleep
+                pet.energy = Math.min(100, pet.energy + (8 * diff10s));
+              } else {
+                // Full offline progression if left awake
+                pet.hunger = Math.max(0, pet.hunger - (2.5 * diff10s));
+                pet.chaos = Math.min(100, pet.chaos + (2 * diff10s));
+                pet.grease = Math.max(0, pet.grease - (1 * diff10s));
+                pet.energy = Math.max(0, pet.energy - (1.5 * diff10s));
+              }
+              console.log(`Loaded Jimothy. Missed ${diff10s} ticks while away.`);
+            }
+          }
+        }
+      } catch(e) { console.warn("Save load error, starting fresh", e); }
+    }
+
     function checkEvolution() {
       const oldStage = pet.stage;
       if (pet.shinyCaps >= 10 && pet.chaos >= 70) pet.stage = 'emperor';
@@ -728,8 +761,22 @@
       } else if (opt.includes("LINT")) {
         btnStart.click(); // Reuse lint logic
       } else if (opt.includes("RESET")) {
+        // Explicitly wipe the local storage save data
+        localStorage.removeItem(STATE_KEY); 
+        
         pet = { name: "Jimothy", ageMinutes: 1, hunger: 80, chaos: 45, grease: 60, energy: 70, shinyCaps: 3, stage: 'kit', isSleeping: false, trashCollected: 0, raidFrenzy: 0 };
-        if (pet.isSleeping) toggleNap();
+        
+        // Force reset sleep visuals if he was previously napping
+        elements.graphic.classList.add('idle-anim');
+        elements.eyes.style.display = 'block';
+        elements.sleepZzz.style.display = 'none';
+        const dreamBubble = document.getElementById('dreamBubble');
+        if (dreamBubble) {
+          dreamBubble.classList.add('hidden');
+          dreamBubble.classList.remove('flex');
+        }
+        if (dreamInterval) clearInterval(dreamInterval);
+
         setLog("A fresh Jimothy crawled out of the bin.");
         updateHUD();
       } else if (opt.includes("AI FORAGE")) {
@@ -1244,7 +1291,23 @@
     });
 
     loadPrefs();
+    loadState();
     updateHUD();
+    
+    // Check sleep state on load to update visuals properly
+    if (pet.isSleeping) {
+       elements.graphic.classList.remove('idle-anim');
+       elements.eyes.style.display = 'none';
+       elements.sleepZzz.style.display = 'block';
+       const dreamBubble = document.getElementById('dreamBubble');
+       if (dreamBubble) {
+         dreamBubble.classList.remove('hidden');
+         dreamBubble.classList.add('flex');
+       }
+       cycleDreams();
+       dreamInterval = setInterval(cycleDreams, 3500);
+       setLog("Jimothy is fast asleep.");
+    }
   </script>
 </body>
 </html>
