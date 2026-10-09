@@ -104,6 +104,30 @@
     }
     .splat-drip { animation: splatDrip 3.5s forwards; }
 
+    /* Environment Animations */
+    @keyframes cloudPan {
+      from { transform: translateX(-40px); }
+      to { transform: translateX(140px); }
+    }
+    .cloud-anim-1 { animation: cloudPan 45s linear infinite; }
+    .cloud-anim-2 { animation: cloudPan 65s linear infinite 15s; }
+
+    @keyframes twinkleStar {
+      0%, 100% { opacity: 0.1; }
+      50% { opacity: 0.9; }
+    }
+    .twinkle-anim { animation: twinkleStar 3s ease-in-out infinite; }
+
+    @keyframes flickerLight {
+      0%, 100% { opacity: 0.1; }
+      5% { opacity: 0.15; }
+      10% { opacity: 0.05; }
+      15% { opacity: 0.1; }
+      50% { opacity: 0.1; }
+      55% { opacity: 0.15; }
+    }
+    .flicker-anim { animation: flickerLight 6s infinite; }
+
     .pixelated {
       image-rendering: pixelated;
       image-rendering: crisp-edges;
@@ -179,44 +203,50 @@
             </div>
           </div>
 
-          <!-- Meters Grid -->
-          <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[7px] sm:text-[8px] my-1 border-b pb-1" style="border-color: var(--lcd-ui);">
+          <!-- Meters Grid (Compact Pixel Indicators) -->
+          <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] sm:text-[9px] my-1 border-b pb-1 shrink-0 font-mono" style="border-color: var(--lcd-ui);">
             <div>
               <div class="flex justify-between"><span>TRASH:</span><span id="hungerNum">80%</span></div>
-              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
-                <div id="hungerBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 80%;"></div>
-              </div>
+              <div class="w-full h-1.5 sm:h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);"><div id="hungerBar" class="h-full rounded-[1px] transition-all" style="background-color: var(--lcd-pixel); width: 80%;"></div></div>
             </div>
             <div>
               <div class="flex justify-between"><span>CHAOS:</span><span id="chaosNum">45%</span></div>
-              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
-                <div id="chaosBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 45%;"></div>
-              </div>
+              <div class="w-full h-1.5 sm:h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);"><div id="chaosBar" class="h-full rounded-[1px] transition-all" style="background-color: var(--lcd-pixel); width: 45%;"></div></div>
             </div>
             <div>
               <div class="flex justify-between"><span>GREASE:</span><span id="greaseNum">60%</span></div>
-              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
-                <div id="greaseBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 60%;"></div>
-              </div>
+              <div class="w-full h-1.5 sm:h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);"><div id="greaseBar" class="h-full rounded-[1px] transition-all" style="background-color: var(--lcd-pixel); width: 60%;"></div></div>
             </div>
             <div>
               <div class="flex justify-between"><span>ENERGY:</span><span id="energyNum">70%</span></div>
-              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
-                <div id="energyBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 70%;"></div>
-              </div>
+              <div class="w-full h-1.5 sm:h-2 rounded-[2px] p-[1px]" style="background-color: var(--lcd-ghost);"><div id="energyBar" class="h-full rounded-[1px] transition-all" style="background-color: var(--lcd-pixel); width: 70%;"></div></div>
             </div>
           </div>
 
-          <!-- Main Stage -->
-          <div id="stageArea" class="relative flex-1 flex flex-col items-center justify-center min-h-[90px] overflow-hidden">
+          <!-- Main Stage: Jimothy Pixel Character Canvas / Sprite -->
+          <div id="stageArea" class="relative flex-1 flex flex-col items-center justify-center min-h-[110px] overflow-hidden">
+
+            <!-- Static LCD Printed Background -->
             <svg id="stageBackground" class="absolute inset-0 w-full h-full pixelated z-0" viewBox="0 0 120 70" preserveAspectRatio="none">
               <g style="fill: var(--lcd-pixel); stroke: var(--lcd-pixel);" opacity="0.18">
-                <!-- BG Elements: Buildings & Fences -->
-                <rect x="0" y="0" width="35" height="70" opacity="0.1" stroke="none" />
+                <!-- Left side: Brick Building -->
+                <rect x="0" y="0" width="35" height="70" style="fill: var(--lcd-pixel);" opacity="0.1" stroke="none" />
                 <line x1="35" y1="0" x2="35" y2="70" stroke-width="1.5" />
+                
+                <!-- Window -->
                 <rect x="6" y="10" width="20" height="26" fill="none" stroke-width="1.5" />
                 <line x1="6" y1="23" x2="26" y2="23" stroke-width="1" />
                 <line x1="16" y1="10" x2="16" y2="36" stroke-width="1" />
+                <rect x="4" y="36" width="24" height="2" stroke="none" />
+                
+                <!-- Brick patterns -->
+                <line x1="0" y1="46" x2="12" y2="46" stroke-width="1" />
+                <line x1="12" y1="46" x2="12" y2="52" stroke-width="1" />
+                <line x1="20" y1="52" x2="35" y2="52" stroke-width="1" />
+                <line x1="20" y1="52" x2="20" y2="58" stroke-width="1" />
+                <line x1="0" y1="60" x2="15" y2="60" stroke-width="1" />
+                <line x1="15" y1="60" x2="15" y2="66" stroke-width="1" />
+
                 <!-- Fence -->
                 <rect x="85" y="35" width="6" height="35" fill="none" stroke-width="1" />
                 <polygon points="85,35 88,30 91,35" fill="none" stroke-width="1" />
@@ -224,7 +254,44 @@
                 <polygon points="95,28 98,23 101,28" fill="none" stroke-width="1" />
                 <line x1="70" y1="45" x2="120" y2="45" stroke-width="1.5" />
                 <line x1="70" y1="58" x2="120" y2="58" stroke-width="1.5" />
-                <!-- Dumpster -->
+
+                <!-- Dynamic Sky Elements: Clouds, Stars, Sun/Moon -->
+                <g class="cloud-anim-1" style="fill: var(--lcd-pixel); opacity: 0.15;">
+                  <rect x="0" y="8" width="15" height="4" rx="2" />
+                  <circle cx="5" cy="7" r="3" />
+                  <circle cx="10" cy="8" r="2.5" />
+                </g>
+                <g class="cloud-anim-2" style="fill: var(--lcd-pixel); opacity: 0.1;">
+                  <rect x="-30" y="15" width="20" height="5" rx="2.5" />
+                  <circle cx="-25" cy="14" r="3" />
+                  <circle cx="-18" cy="13" r="4" />
+                  <circle cx="-13" cy="15" r="2" />
+                </g>
+
+                <g id="starGroup" style="display: none; fill: var(--lcd-pixel);">
+                   <circle cx="25" cy="10" r="0.5" class="twinkle-anim" style="animation-delay: 0s;" />
+                   <circle cx="55" cy="6" r="0.5" class="twinkle-anim" style="animation-delay: 1.5s;" />
+                   <circle cx="85" cy="12" r="0.5" class="twinkle-anim" style="animation-delay: 0.7s;" />
+                   <circle cx="110" cy="5" r="0.5" class="twinkle-anim" style="animation-delay: 2s;" />
+                </g>
+
+                <!-- Celestial Body (Moves dynamically via JS) -->
+                <g id="celestialBody" transform="translate(100, 15)"></g>
+
+                <!-- Powerlines -->
+                <path d="M 35,5 Q 75,20 120,0" fill="none" stroke-width="0.75" />
+                <path d="M 35,15 Q 75,30 120,10" fill="none" stroke-width="0.75" />
+
+                <!-- Street Lamp -->
+                <line x1="72" y1="45" x2="72" y2="25" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                <path d="M 72,25 Q 75,20 80,22" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                <polygon points="78,21 82,23 83,25 77,25" fill="var(--lcd-pixel)"/>
+                <!-- The light beam (Night only) -->
+                <g id="streetLightBeam" class="flicker-anim" style="fill: var(--lcd-pixel); opacity: 0.1;">
+                  <polygon points="80,25 65,45 95,45" />
+                </g>
+
+                <!-- Distant Dumpster -->
                 <path d="M 42,45 L 68,45 L 68,65 L 42,65 Z" fill="none" stroke-width="1" />
                 <line x1="40" y1="45" x2="70" y2="45" stroke-width="1.5" />
                 <line x1="0" y1="65" x2="120" y2="65" stroke-width="1" />
@@ -435,6 +502,62 @@
     }
     const sound = new RetroSound();
 
+    class PushNotifier {
+      constructor() {
+        this.enabled = false;
+        this.lastNotifTime = {};
+      }
+
+      async toggle() {
+        if (!("Notification" in window)) {
+          setLog("Notifications not supported in this browser.");
+          return false;
+        }
+
+        if (this.enabled) {
+          this.enabled = false;
+          return false;
+        }
+
+        if (Notification.permission === "granted") {
+          this.enabled = true;
+          this.testSend();
+          return true;
+        } else if (Notification.permission !== "denied") {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            this.enabled = true;
+            this.testSend();
+            return true;
+          } else {
+            setLog("Notification permission denied.");
+          }
+        } else {
+           setLog("Notifications blocked by browser.");
+        }
+        return false;
+      }
+      
+      testSend() {
+        if(this.enabled) new Notification("Jimothy-Gotchi", { body: "Notifications enabled! 🦝" });
+      }
+
+      send(type, title, body, cooldown = 60000) {
+        if (!this.enabled || !("Notification" in window) || Notification.permission !== "granted") return;
+        
+        const now = Date.now();
+        if (now - (this.lastNotifTime[type] || 0) < cooldown) return;
+        
+        this.lastNotifTime[type] = now;
+        try {
+          new Notification(title, { body: body });
+        } catch(e) {
+          console.warn("Notification failed", e);
+        }
+      }
+    }
+    const notifier = new PushNotifier();
+
     const SHAPES = [
       "12px 12px 40px 40px", // Classic Gameboy
       "45% 45% 50% 50% / 55% 55% 45% 45%", // Egg/Tamagotchi
@@ -493,7 +616,7 @@
     let pet = {
       name: "Jimothy", ageMinutes: 1, hunger: 75, chaos: 50, grease: 65, energy: 70,
       shinyCaps: 3, stage: 'kit', isSleeping: false, lastSaved: Date.now(), inMiniGame: false,
-      trashCollected: 0
+      trashCollected: 0, raidFrenzy: 0
     };
 
     let isGeneratingAI = false;
@@ -554,6 +677,7 @@
       if (oldStage !== pet.stage) {
         sound.fanfare();
         showReaction("⚡ EVOLVED! ⚡", 2500);
+        notifier.send('evolve', 'Jimothy Mutated! ⚡', `God help us all, he's now a ${title}...`, 0);
       }
       elements.rankBadge.textContent = `${title} (M:${pet.ageMinutes})`;
     }
@@ -604,7 +728,7 @@
       } else if (opt.includes("LINT")) {
         btnStart.click(); // Reuse lint logic
       } else if (opt.includes("RESET")) {
-        pet = { name: "Jimothy", ageMinutes: 1, hunger: 80, chaos: 45, grease: 60, energy: 70, shinyCaps: 3, stage: 'kit', isSleeping: false, trashCollected: 0 };
+        pet = { name: "Jimothy", ageMinutes: 1, hunger: 80, chaos: 45, grease: 60, energy: 70, shinyCaps: 3, stage: 'kit', isSleeping: false, trashCollected: 0, raidFrenzy: 0 };
         if (pet.isSleeping) toggleNap();
         setLog("A fresh Jimothy crawled out of the bin.");
         updateHUD();
@@ -636,9 +760,60 @@
       drawTrashPalace();
 
       checkEvolution();
-      const now = new Date();
-      document.getElementById('timeClock').textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      updateClockDisplay();
       saveState();
+    }
+
+    function updateClockDisplay() {
+      const now = new Date();
+      let hrs = now.getHours();
+      let mins = now.getMinutes();
+      document.getElementById('timeClock').textContent = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+
+      // Dynamic Environment Setup
+      const isDay = hrs >= 6 && hrs < 18;
+      const statusMoon = document.getElementById('statusMoon');
+      const starGroup = document.getElementById('starGroup');
+      const celestialBody = document.getElementById('celestialBody');
+      const streetLightBeam = document.getElementById('streetLightBeam');
+      
+      let f; // 0.0 to 1.0 representing progress through the day or night
+      
+      if (isDay) {
+         f = (hrs - 6 + mins/60) / 12;
+         if (statusMoon) statusMoon.textContent = '☀️';
+         if (starGroup) starGroup.style.display = 'none';
+         if (streetLightBeam) streetLightBeam.style.display = 'none';
+         if (celestialBody) {
+             celestialBody.innerHTML = `
+                 <circle cx="0" cy="0" r="3.5" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="-6" y1="0" x2="-8" y2="0" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="6" y1="0" x2="8" y2="0" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="0" y1="-6" x2="0" y2="-8" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="0" y1="6" x2="0" y2="8" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="-4" y1="-4" x2="-5.5" y2="-5.5" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="4" y1="4" x2="5.5" y2="5.5" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="-4" y1="4" x2="-5.5" y2="5.5" stroke="var(--lcd-pixel)" stroke-width="1"/>
+                 <line x1="4" y1="-4" x2="5.5" y2="-5.5" stroke="var(--lcd-pixel)" stroke-width="1"/>
+             `;
+         }
+      } else {
+         let nightHrs = hrs >= 18 ? hrs - 18 : hrs + 6;
+         f = (nightHrs + mins/60) / 12;
+         if (statusMoon) statusMoon.textContent = '🌙';
+         if (starGroup) starGroup.style.display = 'block';
+         if (streetLightBeam) streetLightBeam.style.display = 'block';
+         if (celestialBody) {
+             celestialBody.innerHTML = `<path d="M 0,-4 A 4.5,4.5 0 1,0 4,4 A 5.5,5.5 0 0,1 0,-4 Z" style="fill: var(--lcd-pixel);" stroke="none" />`;
+         }
+      }
+
+      // Parabolic arc for the Sun/Moon across the LCD sky
+      if (celestialBody) {
+         const x = 20 + (f * 90); 
+         const y = 25 - (Math.sin(f * Math.PI) * 18);
+         celestialBody.setAttribute('transform', `translate(${x}, ${y})`);
+      }
     }
 
     function throwTrashAtScreen() {
@@ -732,14 +907,34 @@
         pet.grease = Math.max(0, pet.grease - 1);
         pet.energy = Math.max(0, pet.energy - 1.5);
 
+        // Notifications for critical states (cooldown prevents spamming)
+        if (pet.hunger < 20) {
+          notifier.send('hunger', 'Starvation Imminent! 🥫', 'Jimothy is chewing the drywall. Feed him some trash before he eats your router!', 120000);
+        } else if (pet.chaos > 85) {
+          notifier.send('chaos', 'Absolute Havoc! 🔥', 'Jimothy is going feral. You might want to check on him before he devours your fridge...', 120000);
+        }
+
         // Throw condition logic!
         if (pet.chaos >= 60 && pet.hunger < 50 && Math.random() < 0.4) {
             if (!isAnimatingThrow) throwTrashAtScreen();
         } else if (Math.random() < 0.25) {
           triggerRandomAntics();
         } else {
-          // Passive trash collection when unsupervised
-          pet.trashCollected = (pet.trashCollected || 0) + 1;
+          // Palace Building Mechanics
+          if (pet.raidFrenzy > 0) {
+              pet.raidFrenzy--;
+              pet.trashCollected = (pet.trashCollected || 0) + 8;
+              if (Math.random() < 0.4) setLog("RAID FRENZY! Palace building accelerated!");
+          } else if (pet.hunger >= 20) {
+              // Costs 3 TRASH (Hunger) to actively build his home
+              pet.hunger -= 3;
+              pet.trashCollected = (pet.trashCollected || 0) + 2;
+              if (Math.random() < 0.2) setLog("Jimothy spent some TRASH to upgrade his palace.");
+          } else {
+              // Too hungry to build effectively
+              pet.trashCollected = (pet.trashCollected || 0) + 0.2;
+              if (Math.random() < 0.2) setLog("Need more TRASH to build palace...");
+          }
           drawTrashPalace();
         }
       }
@@ -862,9 +1057,12 @@
         sound.fanfare();
         let loot = cansTipped * 15;
         pet.trashCollected = (pet.trashCollected || 0) + loot;
+        pet.hunger = Math.min(100, pet.hunger + (cansTipped * 8)); // Replenish his TRASH meter
+        pet.raidFrenzy = 6; // 60 seconds of free accelerated building
         pet.chaos += 10;
         pet.grease += 5;
         showReaction(`👑 +${loot} TRASH!`);
+        message = `Looted ${cansTipped} bins & triggered a BUILD FRENZY!`;
       } else {
         document.getElementById('jimothyGraphic').classList.remove('idle-anim');
         document.getElementById('jimothyGraphic').classList.add('shake-anim');
@@ -883,34 +1081,54 @@
       const g = document.getElementById('trashPalaceGroup');
       if (!g) return;
       
-      let level = 0;
-      if (tc > 50) level = 1;
-      if (tc > 150) level = 2;
-      if (tc > 350) level = 3;
-
       let html = '';
-      if (level >= 1) {
-        // Base cardboard box
-        html += `<rect x="5" y="45" width="25" height="20" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+
+      if (tc > 30) {
+        // Level 1: Cardboard Box Base
+        html += `<path d="M 5,65 L 5,45 L 30,45 L 30,65" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
                  <line x1="5" y1="48" x2="30" y2="48" stroke-width="1" stroke="var(--lcd-pixel)"/>
-                 <text x="7" y="58" font-size="6" font-family="monospace" fill="var(--lcd-pixel)">FRAGILE</text>`;
+                 <text x="8" y="57" font-size="5" font-family="monospace" fill="var(--lcd-pixel)">FRAGILE</text>
+                 <path d="M 5,45 L 1,39 M 30,45 L 34,39" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>`;
       }
-      if (level >= 2) {
-        // Add a tire and some stacked cans
-        html += `<circle cx="35" cy="55" r="8" fill="none" stroke-width="2" stroke="var(--lcd-pixel)"/>
-                 <circle cx="35" cy="55" r="4" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
-                 <rect x="10" y="35" width="8" height="10" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
-                 <rect x="18" y="37" width="8" height="8" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>`;
+      if (tc > 90) {
+        // Level 2: Pizza boxes & Milk Crate
+        html += `<rect x="32" y="60" width="18" height="2" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <rect x="33" y="57" width="16" height="2" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <rect x="12" y="32" width="14" height="13" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="12" y1="36" x2="26" y2="36" stroke-width="0.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="12" y1="40" x2="26" y2="40" stroke-width="0.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="16" y1="32" x2="16" y2="45" stroke-width="0.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="22" y1="32" x2="22" y2="45" stroke-width="0.5" stroke="var(--lcd-pixel)"/>`;
       }
-      if (level >= 3) {
-        // Full blown throne canopy (umbrella, fairy lights)
-        html += `<path d="M 5,30 Q 20,10 35,30 Z" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
-                 <line x1="20" y1="30" x2="20" y2="45" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
-                 <!-- fairy lights string -->
-                 <path d="M 0,25 Q 15,35 35,25" fill="none" stroke-dasharray="2,3" stroke-width="1" stroke="var(--lcd-pixel)"/>`;
+      if (tc > 180) {
+        // Level 3: Tire & Broken TV
+        html += `<circle cx="45" cy="55" r="7" fill="none" stroke-width="2" stroke="var(--lcd-pixel)"/>
+                 <circle cx="45" cy="55" r="3" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <rect x="13" y="20" width="12" height="12" rx="1" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <rect x="15" y="22" width="8" height="8" rx="0.5" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <line x1="15" y1="20" x2="12" y2="15" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <line x1="19" y1="20" x2="24" y2="14" stroke-width="1" stroke="var(--lcd-pixel)"/>`;
       }
+      if (tc > 300) {
+        // Level 4: Ramps and Flag
+        html += `<line x1="30" y1="45" x2="52" y2="65" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="32" y1="44" x2="54" y2="64" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="2" y1="45" x2="2" y2="15" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <path d="M 2,15 Q 8,12 12,18 Q 8,22 2,20 Z" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <path d="M 3,16 Q 8,13 11,18 Q 8,21 3,19 Z" fill="var(--lcd-pixel)" opacity="0.3"/>`;
+      }
+      if (tc > 500) {
+        // Level 5: The Grand Canopy & Fairy Lights
+        html += `<path d="M -5,10 Q 20,-5 45,10 Z" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="20" y1="10" x2="20" y2="20" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <!-- Fairy Lights string with flicker animation -->
+                 <path d="M -5,10 Q 10,20 25,10 Q 35,18 45,10" fill="none" stroke-dasharray="1,4" stroke-width="2" stroke="var(--lcd-pixel)" class="flicker-anim"/>
+                 <!-- Star topper with twinkle animation -->
+                 <polygon points="20,-2 22,2 26,2 23,5 24,9 20,7 16,9 17,5 14,2 18,2" fill="none" stroke-width="1" stroke="var(--lcd-pixel)" class="twinkle-anim"/>`;
+      }
+
       g.innerHTML = html;
-      g.style.opacity = '0.35'; // Blend into background
+      g.style.opacity = '0.45'; // Blend nicely but stay visible
     }
 
     btnMenu.addEventListener('click', () => {
@@ -1000,6 +1218,14 @@
     document.getElementById('lcdToggleBtn').addEventListener('click', () => {
       sound.beep(); prefs.lcdIdx = (prefs.lcdIdx + 1) % LCD_STYLES.length; applyPrefs(); showReaction(`💡 ${LCD_STYLES[prefs.lcdIdx].name} LCD`, 1000);
     });
+    
+    document.getElementById('notifToggleBtn').addEventListener('click', async (e) => {
+      sound.beep();
+      const isEnabled = await notifier.toggle();
+      e.target.textContent = isEnabled ? '🔔' : '🔕';
+      showReaction(isEnabled ? "🔔 Notifs ON" : "🔕 Notifs OFF", 1500);
+    });
+
     document.getElementById('soundToggleBtn').addEventListener('click', (e) => {
       const isMuted = sound.toggleMute();
       e.target.textContent = isMuted ? '🔇' : '🔊';
