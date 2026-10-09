@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jimothy-Gotchi: Raccoon Virtual Pet</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: VT323 & Press Start 2P -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Theme Defaults */
+      --lcd-bg: #8ca374;
+      --lcd-pixel: #1c2718;
+      --lcd-ghost: #7f9568;
+      --lcd-ui: rgba(28, 39, 24, 0.3);
+
+      --shell-bg-1: #2d6b52;
+      --shell-bg-2: #1e4a38;
+      --shell-bg-3: #122c22;
+      --shell-border: #0f251c;
+      --shell-radius: 12px 12px 40px 40px; /* Gameboy Shape by default now */
+      --shell-bezel: #1b251e;
+      --shell-bezel-border: #0b1712;
+      --brand-text: #6ee7b7;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #1a221f 0%, #0d1210 100%);
+      font-family: 'Press Start 2P', monospace;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .lcd-screen {
+      background-color: var(--lcd-bg);
+      color: var(--lcd-pixel);
+      box-shadow: inset 3px 3px 10px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(255,255,255,0.25);
+      position: relative;
+    }
+
+    .lcd-screen::before {
+      content: " ";
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%), 
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      opacity: 0.7;
+      z-index: 20;
+    }
+
+    .toy-shell {
+      background: radial-gradient(circle at 35% 25%, var(--shell-bg-1) 0%, var(--shell-bg-2) 50%, var(--shell-bg-3) 100%);
+      border: 8px solid var(--shell-border);
+      border-radius: var(--shell-radius);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 6px 12px rgba(255, 255, 255, 0.18), inset 0 -8px 16px rgba(0, 0, 0, 0.6);
+      transition: border-radius 0.4s ease, background 0.4s ease, border-color 0.4s ease;
+    }
+
+    /* Pixel Art Animations */
+    @keyframes raccoonIdle {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-4px) scale(1.02); }
+    }
+    .idle-anim { animation: raccoonIdle 1.1s steps(2, start) infinite; }
+
+    @keyframes hissShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-3px, 2px); }
+      40% { transform: translate(3px, -2px); }
+      60% { transform: translate(-3px, -2px); }
+      80% { transform: translate(3px, 2px); }
+    }
+    .shake-anim { animation: hissShake 0.15s infinite; }
+
+    @keyframes trashRaid {
+      0% { transform: rotate(0deg) translateX(0); }
+      25% { transform: rotate(-8deg) translateX(-6px); }
+      75% { transform: rotate(10deg) translateX(6px); }
+      100% { transform: rotate(0deg) translateX(0); }
+    }
+    .raid-anim { animation: trashRaid 0.35s steps(2, start) infinite; }
+
+    @keyframes lcdGlitch {
+      0% { transform: translate(0) skew(0deg); filter: hue-rotate(0deg); }
+      20% { transform: translate(-2px, 1px) skew(-5deg); filter: hue-rotate(90deg) invert(0.2); }
+      40% { transform: translate(2px, -1px) skew(5deg); filter: hue-rotate(-90deg) invert(0); }
+      60% { transform: translate(-1px, 2px) skew(0deg); filter: hue-rotate(180deg) invert(0.5); }
+      80% { transform: translate(1px, -2px) skew(2deg); filter: hue-rotate(45deg); }
+      100% { transform: translate(0) skew(0deg); filter: hue-rotate(0deg); }
+    }
+    .glitch-effect { animation: lcdGlitch 0.3s infinite; }
+
+    @keyframes splatDrip {
+      0% { transform: scale(0.5); opacity: 1; }
+      10% { transform: scale(2.5); opacity: 1; }
+      100% { transform: scale(2.5) translateY(30px); opacity: 0; }
+    }
+    .splat-drip { animation: splatDrip 3.5s forwards; }
+
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 select-none text-slate-100 overflow-x-hidden">
+
+  <div class="relative w-full h-[95vh] min-h-[650px] max-w-[600px] flex flex-col items-center">
+    
+    <!-- Handheld Body Container (Dynamically scaled via flex) -->
+    <div class="toy-shell w-full h-full p-4 sm:p-6 relative z-10 flex flex-col items-center justify-between">
+      
+      <!-- Top Brand Header -->
+      <div class="w-full flex items-center justify-between px-2 pt-1 pb-3 shrink-0">
+        <div class="flex items-center space-x-1">
+          <span class="inline-block w-2.5 h-2.5 rounded-full animate-pulse shadow-[0_0_8px_var(--brand-text)]" style="background-color: var(--brand-text);"></span>
+          <span class="text-[10px] sm:text-xs tracking-wider font-bold drop-shadow" style="color: var(--brand-text);">BE Bandit-Pet</span>
+        </div>
+        <div class="text-[10px] sm:text-xs tracking-widest font-extrabold uppercase" style="color: var(--brand-text);">
+          JIMOTHY 2000
+        </div>
+      </div>
+
+      <!-- Settings Icon Row -->
+      <div class="w-full flex justify-end space-x-2 mb-2 px-2">
+        <button id="deviceToggleBtn" class="text-xs transition hover:text-white" style="color: var(--brand-text);" title="Change Device Shape">📱</button>
+        <button id="colorToggleBtn" class="text-xs transition hover:text-white" style="color: var(--brand-text);" title="Change Shell Color">🎨</button>
+        <button id="lcdToggleBtn" class="text-xs transition hover:text-white" style="color: var(--brand-text);" title="Change Screen Backlight">💡</button>
+        <button id="webhookToggleBtn" class="text-xs transition hover:text-white" style="color: var(--brand-text);" title="Set Webhook">💬</button>
+        <button id="notifToggleBtn" class="text-xs transition hover:text-white" style="color: var(--brand-text);" title="Toggle Notifications">🔕</button>
+        <button id="soundToggleBtn" class="text-xs transition hover:text-white" style="color: var(--brand-text);" title="Toggle Sound">🔊</button>
+      </div>
+
+      <div class="w-full flex-1 flex flex-col min-h-[200px] p-2 sm:p-4 rounded-2xl shadow-inner border-4 shrink-0" style="background-color: var(--shell-bezel); border-color: var(--shell-bezel-border);">
+        
+        <!-- Gameboy Top Bezel Text -->
+        <div class="w-full flex justify-center mb-1 shrink-0">
+            <span class="text-[8px] font-sans tracking-[0.2em] opacity-70" style="color: var(--shell-bg-3);">DOT MATRIX WITH STEREO SOUND</span>
+        </div>
+
+        <div id="lcdScreen" class="lcd-screen w-full flex-1 rounded-lg p-2.5 flex flex-col justify-between overflow-hidden" style="color: var(--lcd-pixel);">
+          
+          <!-- Screen Splat & Crack Overlays -->
+          <div id="screenSplat" class="absolute inset-0 z-30 hidden items-center justify-center pointer-events-none">
+            <div id="splatGraphic" class="text-5xl sm:text-7xl drop-shadow-lg transition-all duration-1000 origin-center">🍅</div>
+          </div>
+          
+          <div id="screenCrack" class="absolute inset-0 z-30 hidden pointer-events-none opacity-80">
+             <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                 <path d="M50 50 L20 10 M50 50 L80 15 M50 50 L10 60 M50 50 L90 70 M50 50 L40 90 M50 50 L70 95 M40 40 L60 60 M30 50 L70 40 M45 60 L60 35" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
+                 <path d="M50 50 L25 15 M50 50 L85 20 M50 50 L15 65 M50 50 L85 65 M50 50 L35 85" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" fill="none" />
+             </svg>
+          </div>
+
+          <!-- On-Screen Interactive Menu -->
+          <div id="menuScreen" class="absolute inset-0 z-40 hidden flex-col p-2" style="background-color: var(--lcd-bg);">
+            <div class="flex justify-between items-center text-[9px] sm:text-[10px] font-bold border-b pb-1 mb-1" style="border-color: var(--lcd-ui);">
+              <span>MAIN MENU</span>
+              <span class="animate-pulse opacity-70">▼/▲</span>
+            </div>
+            <div id="menuList" class="flex flex-col space-y-1 text-[8px] sm:text-[9px] font-mono mt-1">
+              <!-- JS populated -->
+            </div>
+          </div>
+
+          <!-- Top Status Icons -->
+          <div class="flex justify-between items-center text-[8px] sm:text-[9px] border-b pb-1 font-mono" style="border-color: var(--lcd-ui);">
+            <span id="rankBadge" class="font-bold truncate max-w-[170px]">KIT BANDIT (AGE 1)</span>
+            <div class="flex items-center space-x-1.5">
+              <span id="timeClock" class="font-mono">03:14 AM</span>
+              <span id="statusMoon">🌙</span>
+            </div>
+          </div>
+
+          <!-- Meters Grid -->
+          <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[7px] sm:text-[8px] my-1 border-b pb-1" style="border-color: var(--lcd-ui);">
+            <div>
+              <div class="flex justify-between"><span>TRASH:</span><span id="hungerNum">80%</span></div>
+              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
+                <div id="hungerBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 80%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between"><span>CHAOS:</span><span id="chaosNum">45%</span></div>
+              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
+                <div id="chaosBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 45%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between"><span>GREASE:</span><span id="greaseNum">60%</span></div>
+              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
+                <div id="greaseBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 60%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between"><span>ENERGY:</span><span id="energyNum">70%</span></div>
+              <div class="w-full h-1.5 rounded-[2px]" style="background-color: var(--lcd-ghost);">
+                <div id="energyBar" class="h-full rounded-[1px] transition-all duration-300" style="background-color: var(--lcd-pixel); width: 70%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Stage -->
+          <div id="stageArea" class="relative flex-1 flex flex-col items-center justify-center min-h-[90px] overflow-hidden">
+            <svg id="stageBackground" class="absolute inset-0 w-full h-full pixelated z-0" viewBox="0 0 120 70" preserveAspectRatio="none">
+              <g style="fill: var(--lcd-pixel); stroke: var(--lcd-pixel);" opacity="0.18">
+                <!-- BG Elements: Buildings & Fences -->
+                <rect x="0" y="0" width="35" height="70" opacity="0.1" stroke="none" />
+                <line x1="35" y1="0" x2="35" y2="70" stroke-width="1.5" />
+                <rect x="6" y="10" width="20" height="26" fill="none" stroke-width="1.5" />
+                <line x1="6" y1="23" x2="26" y2="23" stroke-width="1" />
+                <line x1="16" y1="10" x2="16" y2="36" stroke-width="1" />
+                <!-- Fence -->
+                <rect x="85" y="35" width="6" height="35" fill="none" stroke-width="1" />
+                <polygon points="85,35 88,30 91,35" fill="none" stroke-width="1" />
+                <rect x="95" y="28" width="6" height="42" fill="none" stroke-width="1" />
+                <polygon points="95,28 98,23 101,28" fill="none" stroke-width="1" />
+                <line x1="70" y1="45" x2="120" y2="45" stroke-width="1.5" />
+                <line x1="70" y1="58" x2="120" y2="58" stroke-width="1.5" />
+                <!-- Dumpster -->
+                <path d="M 42,45 L 68,45 L 68,65 L 42,65 Z" fill="none" stroke-width="1" />
+                <line x1="40" y1="45" x2="70" y2="45" stroke-width="1.5" />
+                <line x1="0" y1="65" x2="120" y2="65" stroke-width="1" />
+                <line x1="0" y1="68" x2="120" y2="68" stroke-width="2" />
+              </g>
+              <g id="trashPalaceGroup"></g>
+            </svg>
+
+            <!-- Reaction Bubble -->
+            <div id="speechBubble" class="absolute top-0 px-2 py-0.5 text-[8px] sm:text-[10px] rounded border opacity-0 transition-opacity duration-200 z-20 max-w-[200px] text-center" style="background-color: var(--lcd-pixel); color: var(--lcd-bg); border-color: var(--lcd-pixel);">
+              *SCUTTLE*
+            </div>
+
+            <!-- Dream Bubble -->
+            <div id="dreamBubble" class="absolute top-1 right-2 hidden flex-col items-center justify-center p-1 border rounded z-20 shadow-sm" style="background-color: var(--lcd-bg); border-color: var(--lcd-pixel);">
+              <span id="dreamIcon" class="text-sm sm:text-base pixelated">💭</span>
+            </div>
+
+            <!-- Jimothy Vector Graphic (Dynamically scaled) -->
+            <div id="jimothyGraphic" class="relative z-10 idle-anim cursor-pointer transition-transform duration-200 h-[45%] min-h-[70px] max-h-[160px] flex items-end">
+              <svg id="jimothySvg" class="h-full w-auto pixelated" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Tail -->
+                <path d="M 68 62 C 82 62, 94 56, 92 42 C 90 34, 80 34, 76 40 C 74 46, 75 52, 68 56 Z" style="fill: var(--lcd-pixel);" />
+                <path d="M 77 45 C 80 43, 85 45, 85 49" style="stroke: var(--lcd-bg);" stroke-width="3" stroke-linecap="round" />
+                <path d="M 72 52 C 78 50, 83 54, 83 57" style="stroke: var(--lcd-bg);" stroke-width="3" stroke-linecap="round" />
+                <!-- Body -->
+                <ellipse cx="50" cy="56" rx="22" ry="18" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="49" cy="58" rx="14" ry="11" style="fill: var(--lcd-ghost);" />
+                <!-- Ears -->
+                <polygon points="34,26 42,12 48,27" style="fill: var(--lcd-pixel);" />
+                <polygon points="37,24 42,16 46,25" style="fill: var(--lcd-ghost);" />
+                <polygon points="66,26 58,12 52,27" style="fill: var(--lcd-pixel);" />
+                <polygon points="63,24 58,16 54,25" style="fill: var(--lcd-ghost);" />
+                <!-- Head & Mask -->
+                <ellipse cx="50" cy="35" rx="21" ry="15" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="50" cy="36" rx="18" ry="8" style="fill: var(--lcd-ghost);" />
+                <ellipse cx="41" cy="35" rx="6" ry="5" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="59" cy="35" rx="6" ry="5" style="fill: var(--lcd-pixel);" />
+                <!-- Eyes -->
+                <g id="jimothyEyes">
+                  <circle cx="41" cy="34" r="2.2" style="fill: var(--lcd-bg);" />
+                  <circle cx="42" cy="34" r="1.1" style="fill: var(--lcd-pixel);" />
+                  <circle cx="59" cy="34" r="2.2" style="fill: var(--lcd-bg);" />
+                  <circle cx="58" cy="34" r="1.1" style="fill: var(--lcd-pixel);" />
+                </g>
+                <!-- Zzz for sleeping (Hidden by default) -->
+                <g id="sleepZzz" style="display: none;">
+                  <text x="65" y="20" font-family="monospace" font-size="12" style="fill: var(--lcd-pixel); animation: raccoonIdle 2s infinite;">Z</text>
+                  <text x="75" y="10" font-family="monospace" font-size="16" style="fill: var(--lcd-pixel); animation: raccoonIdle 2.5s infinite;">z</text>
+                </g>
+                <!-- Snout -->
+                <ellipse cx="50" cy="41" rx="5" ry="3.5" style="fill: var(--lcd-bg);" />
+                <polygon points="48,40 52,40 50,42" style="fill: var(--lcd-pixel);" />
+                <line x1="33" y1="39" x2="25" y2="38" style="stroke: var(--lcd-pixel);" stroke-width="1.5" />
+                <line x1="67" y1="39" x2="75" y2="38" style="stroke: var(--lcd-pixel);" stroke-width="1.5" />
+                <!-- Paws -->
+                <ellipse cx="38" cy="56" rx="4" ry="3" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="62" cy="56" rx="4" ry="3" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="38" cy="73" rx="5" ry="3.5" style="fill: var(--lcd-pixel);" />
+                <ellipse cx="62" cy="73" rx="5" ry="3.5" style="fill: var(--lcd-pixel);" />
+                <!-- Crown -->
+                <g id="crownSlot" style="display: none;">
+                  <polygon points="42,16 46,21 50,14 54,21 58,16 57,25 43,25" style="fill: var(--lcd-pixel);" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Ground Props -->
+            <div id="groundProps" class="relative z-10 w-full flex justify-between items-end px-3 text-xs -mt-1 font-mono">
+              <span id="trashPropLeft">🥫</span>
+              <span id="shinyCountLabel" class="text-[7px] font-bold">✨ CAPS: <span id="capsVal">3</span></span>
+              <span id="trashPropRight">🗑️</span>
+            </div>
+
+            <!-- Mini-Game Overlay -->
+            <div id="miniGameScreen" class="absolute inset-0 p-2 flex flex-col justify-between hidden z-20" style="background-color: var(--lcd-bg);">
+              <div class="flex justify-between items-center text-[7px] font-bold border-b pb-1" style="border-color: var(--lcd-ui);">
+                <span id="gameTitle">MIDNIGHT RAID</span>
+                <span id="gameTimer">TIME: 15s</span>
+              </div>
+              <div id="gameArena" class="relative flex-1 rounded border overflow-hidden my-1 flex items-center justify-center" style="background-color: var(--lcd-ghost); border-color: var(--lcd-ui);"></div>
+              <div class="text-[7px] text-center" id="gameInstructions">TAP [A] TIP BIN | [B] SNEAK</div>
+            </div>
+          </div>
+
+          <!-- Action Log -->
+          <div id="bottomConsole" class="border-t pt-1 flex justify-between items-center text-[9px] sm:text-[11px] shrink-0" style="border-color: var(--lcd-ui);">
+            <p id="actionLog" class="truncate font-mono tracking-tight font-bold">JIMOTHY is sniffing the rug...</p>
+            <span id="activityDot" class="w-1.5 h-1.5 rounded-full animate-ping shrink-0 ml-2" style="background-color: var(--lcd-pixel);"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Utilities Row (Now just a Menu Button) -->
+      <div class="w-full mt-3 flex justify-center px-4 text-[8px] sm:text-[10px] font-bold shrink-0">
+        <button id="btnMenu" class="text-slate-200 bg-slate-800 px-6 py-1.5 rounded-full border border-slate-600 active:bg-slate-700 active:scale-95 transition-all shadow-[inset_0_-2px_4px_rgba(0,0,0,0.5)] tracking-widest">≡ MENU</button>
+      </div>
+
+      <!-- Gameboy Controls Area -->
+      <div class="w-full mt-6 mb-2 flex items-center justify-between px-2 sm:px-6 relative shrink-0">
+        
+        <!-- Classic D-Pad (Percentage based for perfect scaling) -->
+        <div class="relative w-[100px] h-[100px] sm:w-[130px] sm:h-[130px] md:w-[150px] md:h-[150px]">
+          <!-- Visual Cross -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <!-- Vertical -->
+            <div class="w-[33%] h-full bg-gray-800 rounded-sm shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.5),inset_2px_2px_4px_rgba(255,255,255,0.1)] border border-gray-900"></div>
+            <!-- Horizontal -->
+            <div class="absolute w-full h-[33%] bg-gray-800 rounded-sm shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.5),inset_2px_2px_4px_rgba(255,255,255,0.1)] border border-gray-900"></div>
+            <!-- Center Pivot -->
+            <div class="absolute w-[25%] h-[25%] bg-gray-700 rounded-full shadow-inner opacity-40"></div>
+          </div>
+          <!-- Invisible Interactive Hitboxes -->
+          <button id="dpadUp" class="absolute top-0 left-1/2 -translate-x-1/2 w-[33%] h-[33%] z-20 active:bg-white/10 rounded-t-sm cursor-pointer"></button>
+          <button id="dpadDown" class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[33%] h-[33%] z-20 active:bg-white/10 rounded-b-sm cursor-pointer"></button>
+          <button id="dpadLeft" class="absolute left-0 top-1/2 -translate-y-1/2 w-[33%] h-[33%] z-20 active:bg-white/10 rounded-l-sm cursor-pointer"></button>
+          <button id="dpadRight" class="absolute right-0 top-1/2 -translate-y-1/2 w-[33%] h-[33%] z-20 active:bg-white/10 rounded-r-sm cursor-pointer"></button>
+        </div>
+
+        <!-- A and B Action Buttons -->
+        <div class="flex space-x-4 sm:space-x-6 rotate-[-15deg] mt-8 sm:mt-12 mr-2">
+          <!-- Button B -->
+          <div class="flex flex-col items-center">
+            <button id="btnB" class="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full bg-rose-600 border-b-4 border-rose-900 active:border-b-0 active:translate-y-1 active:bg-rose-700 flex items-center justify-center text-rose-200 font-extrabold text-xl sm:text-2xl shadow-[0_5px_10px_rgba(0,0,0,0.5)] transition-all">B</button>
+            <span class="text-[10px] sm:text-[11px] mt-1.5 font-bold tracking-widest" style="color: var(--brand-text);">RAID</span>
+          </div>
+          <!-- Button A -->
+          <div class="flex flex-col items-center -mt-8 sm:-mt-10">
+            <button id="btnA" class="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full bg-rose-600 border-b-4 border-rose-900 active:border-b-0 active:translate-y-1 active:bg-rose-700 flex items-center justify-center text-rose-200 font-extrabold text-xl sm:text-2xl shadow-[0_5px_10px_rgba(0,0,0,0.5)] transition-all">A</button>
+            <span class="text-[10px] sm:text-[11px] mt-1.5 font-bold tracking-widest" style="color: var(--brand-text);">FEED</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Select & Start Buttons -->
+      <div class="w-full mt-6 sm:mt-8 mb-4 flex justify-center space-x-6 shrink-0">
+        <!-- Select (Map to NAP) -->
+        <div class="flex flex-col items-center rotate-[-15deg]">
+          <button id="btnSelect" class="w-16 h-4 sm:w-20 sm:h-5 md:w-24 md:h-6 bg-gray-800 rounded-full shadow-inner border-t border-gray-600 active:bg-gray-900 active:scale-95 transition-transform"></button>
+          <span class="text-[9px] sm:text-[10px] mt-1.5 font-bold tracking-widest" style="color: var(--brand-text);">NAP</span>
+        </div>
+        <!-- Start (Map to LINT) -->
+        <div class="flex flex-col items-center rotate-[-15deg]">
+          <button id="btnStart" class="w-16 h-4 sm:w-20 sm:h-5 md:w-24 md:h-6 bg-gray-800 rounded-full shadow-inner border-t border-gray-600 active:bg-gray-900 active:scale-95 transition-transform"></button>
+          <span class="text-[9px] sm:text-[10px] mt-1.5 font-bold tracking-widest" style="color: var(--brand-text);">LINT</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    class RetroSound {
+      constructor() { this.ctx = null; this.muted = false; }
+      init() {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      toggleMute() { this.muted = !this.muted; return this.muted; }
+      playTone(freq, type = 'square', duration = 0.08, gainVal = 0.08) {
+        if (this.muted) return;
+        try {
+          this.init();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(); osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      }
+      beep() { this.playTone(880, 'square', 0.05, 0.05); }
+      munch() {
+        if (this.muted) return;
+        this.init();
+        [220, 180, 260, 150].forEach((freq, idx) => setTimeout(() => this.playTone(freq, 'triangle', 0.06, 0.1), idx * 60));
+      }
+      hiss() {
+        if (this.muted) return;
+        this.init();
+        const bufferSize = this.ctx.sampleRate * 0.15;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass'; filter.frequency.value = 1000;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+        noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+        noise.start();
+      }
+      scuttle() {
+        if (this.muted) return;
+        [440, 520, 660, 480, 700].forEach((f, i) => setTimeout(() => this.playTone(f, 'sawtooth', 0.04, 0.05), i * 40));
+      }
+      fanfare() {
+        if (this.muted) return;
+        [440, 554, 659, 880].forEach((n, idx) => setTimeout(() => this.playTone(n, 'square', 0.12, 0.1), idx * 90));
+      }
+      thud() { this.playTone(90, 'triangle', 0.15, 0.15); }
+    }
+    const sound = new RetroSound();
+
+    const SHAPES = [
+      "12px 12px 40px 40px", // Classic Gameboy
+      "45% 45% 50% 50% / 55% 55% 45% 45%", // Egg/Tamagotchi
+      "16px", // Modern Brick
+      "60px" // Pill
+    ];
+
+    const THEMES = [
+      { name: 'Forest', bg1: '#2d6b52', bg2: '#1e4a38', bg3: '#122c22', border: '#0f251c', brand: '#6ee7b7' },
+      { name: 'Berry', bg1: '#6b2d5c', bg2: '#4a1e3e', bg3: '#2c1224', border: '#250f1d', brand: '#e76eb4' },
+      { name: 'Classic', bg1: '#9ca3af', bg2: '#6b7280', bg3: '#4b5563', border: '#374151', brand: '#1f2937' },
+      { name: 'Ocean', bg1: '#2d4a6b', bg2: '#1e324a', bg3: '#121e2c', border: '#0f1825', brand: '#6eabe7' }
+    ];
+
+    const LCD_STYLES = [
+      { name: 'Spinach', bg: '#8ca374', pixel: '#1c2718', ghost: '#7f9568', ui: 'rgba(28, 39, 24, 0.3)' },
+      { name: 'Sapphire', bg: '#7493a3', pixel: '#182327', ghost: '#688695', ui: 'rgba(24, 35, 39, 0.3)' },
+      { name: 'Amber', bg: '#a38c74', pixel: '#271e18', ghost: '#957d68', ui: 'rgba(39, 30, 24, 0.3)' },
+      { name: 'Paper', bg: '#e5e7eb', pixel: '#111827', ghost: '#d1d5db', ui: 'rgba(17, 24, 39, 0.2)' }
+    ];
+
+    let prefs = { shapeIdx: 0, themeIdx: 0, lcdIdx: 0 };
+    const PREFS_KEY = 'jimothy_theme_prefs';
+
+    function applyPrefs() {
+      const root = document.documentElement;
+      const shape = SHAPES[prefs.shapeIdx];
+      const theme = THEMES[prefs.themeIdx];
+      const lcd = LCD_STYLES[prefs.lcdIdx];
+
+      root.style.setProperty('--shell-radius', shape);
+      
+      root.style.setProperty('--shell-bg-1', theme.bg1);
+      root.style.setProperty('--shell-bg-2', theme.bg2);
+      root.style.setProperty('--shell-bg-3', theme.bg3);
+      root.style.setProperty('--shell-border', theme.border);
+      root.style.setProperty('--brand-text', theme.brand);
+
+      root.style.setProperty('--lcd-bg', lcd.bg);
+      root.style.setProperty('--lcd-pixel', lcd.pixel);
+      root.style.setProperty('--lcd-ghost', lcd.ghost);
+      root.style.setProperty('--lcd-ui', lcd.ui);
+
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    }
+
+    function loadPrefs() {
+       try {
+         const stored = localStorage.getItem(PREFS_KEY);
+         if (stored) prefs = { ...prefs, ...JSON.parse(stored) };
+       } catch(e) {}
+       applyPrefs();
+    }
+
+    const STATE_KEY = 'jimothy_tamagotchi_save';
+    let pet = {
+      name: "Jimothy", ageMinutes: 1, hunger: 75, chaos: 50, grease: 65, energy: 70,
+      shinyCaps: 3, stage: 'kit', isSleeping: false, lastSaved: Date.now(), inMiniGame: false,
+      trashCollected: 0
+    };
+
+    let isGeneratingAI = false;
+    let isAnimatingThrow = false;
+    let currentFoodIdx = 0;
+    const TRASH_MENU = [
+      { name: "Soggy Fries", hunger: +18, chaos: +5, grease: +10, desc: "Slurped down 4 limp fries!" },
+      { name: "Fish Skeleton", hunger: +25, chaos: +10, grease: +15, desc: "Crunched the spine with glee!" },
+      { name: "Half a Donut", hunger: +35, chaos: +20, grease: +5, desc: "Sugar rush activated!" },
+      { name: "Fresh Broccoli", hunger: -10, chaos: +30, grease: -5, isGross: true, desc: "Hissed and chucked the greens!" }
+    ];
+
+    // DOM References
+    const elements = {
+      hunger: document.getElementById('hungerNum'), hungerBar: document.getElementById('hungerBar'),
+      chaos: document.getElementById('chaosNum'), chaosBar: document.getElementById('chaosBar'),
+      grease: document.getElementById('greaseNum'), greaseBar: document.getElementById('greaseBar'),
+      energy: document.getElementById('energyNum'), energyBar: document.getElementById('energyBar'),
+      log: document.getElementById('actionLog'), bubble: document.getElementById('speechBubble'),
+      graphic: document.getElementById('jimothyGraphic'), eyes: document.getElementById('jimothyEyes'),
+      sleepZzz: document.getElementById('sleepZzz'), screenSplat: document.getElementById('screenSplat'),
+      splatGraphic: document.getElementById('splatGraphic'), screenCrack: document.getElementById('screenCrack'),
+      lcdScreen: document.getElementById('lcdScreen'), capsVal: document.getElementById('capsVal'),
+      rankBadge: document.getElementById('rankBadge'), crown: document.getElementById('crownSlot')
+    };
+
+    // Controls
+    const btnA = document.getElementById('btnA');
+    const btnB = document.getElementById('btnB');
+    const btnSelect = document.getElementById('btnSelect');
+    const btnStart = document.getElementById('btnStart');
+    const btnMenu = document.getElementById('btnMenu'); // Replaced AI/Reset with Menu
+
+    function showReaction(text, duration = 1600) {
+      elements.bubble.textContent = text;
+      elements.bubble.style.opacity = '1';
+      setTimeout(() => elements.bubble.style.opacity = '0', duration);
+    }
+    function setLog(msg) { elements.log.textContent = msg; }
+    function saveState() {
+      pet.lastSaved = Date.now();
+      localStorage.setItem(STATE_KEY, JSON.stringify(pet));
+    }
+
+    function checkEvolution() {
+      const oldStage = pet.stage;
+      if (pet.shinyCaps >= 10 && pet.chaos >= 70) pet.stage = 'emperor';
+      else if (pet.grease >= 75) pet.stage = 'goblin';
+      else if (pet.chaos >= 60) pet.stage = 'burglar';
+      else pet.stage = 'kit';
+
+      let title = "KIT BANDIT";
+      if (pet.stage === 'burglar') title = "MIDNIGHT BURGLAR";
+      if (pet.stage === 'goblin') title = "FERAL SEWER GOBLIN";
+      if (pet.stage === 'emperor') { title = "👑 DUMPSTER EMPEROR"; elements.crown.style.display = 'block'; } 
+      else elements.crown.style.display = 'none';
+
+      if (oldStage !== pet.stage) {
+        sound.fanfare();
+        showReaction("⚡ EVOLVED! ⚡", 2500);
+      }
+      elements.rankBadge.textContent = `${title} (M:${pet.ageMinutes})`;
+    }
+
+    // Menu System Variables & Logic
+    let isMenuOpen = false;
+    let menuIndex = 0;
+    const MENU_OPTIONS = ["✨ AI FORAGE", "🔄 RESET JIMOTHY", "💤 NAP TIME", "🧹 LINT ROLL", "❌ CANCEL"];
+
+    function renderMenu() {
+      const list = document.getElementById('menuList');
+      list.innerHTML = '';
+      MENU_OPTIONS.forEach((opt, idx) => {
+        const item = document.createElement('div');
+        item.className = `p-1 rounded flex items-center transition-colors duration-100 ${idx === menuIndex ? 'shadow-inner' : ''}`;
+        if (idx === menuIndex) {
+          item.style.backgroundColor = 'var(--lcd-pixel)';
+          item.style.color = 'var(--lcd-bg)';
+        }
+        item.textContent = (idx === menuIndex ? '▶ ' : '  ') + opt;
+        list.appendChild(item);
+      });
+    }
+
+    function toggleMenu() {
+      if (pet.inMiniGame) return;
+      isMenuOpen = !isMenuOpen;
+      const menuDiv = document.getElementById('menuScreen');
+      if (isMenuOpen) {
+        menuIndex = 0;
+        menuDiv.classList.remove('hidden');
+        menuDiv.classList.add('flex');
+        renderMenu();
+        sound.beep();
+      } else {
+        menuDiv.classList.add('hidden');
+        menuDiv.classList.remove('flex');
+        sound.beep();
+      }
+    }
+
+    function executeMenuOption() {
+      const opt = MENU_OPTIONS[menuIndex];
+      toggleMenu(); // Close menu
+      
+      if (opt.includes("NAP")) {
+        toggleNap();
+      } else if (opt.includes("LINT")) {
+        btnStart.click(); // Reuse lint logic
+      } else if (opt.includes("RESET")) {
+        pet = { name: "Jimothy", ageMinutes: 1, hunger: 80, chaos: 45, grease: 60, energy: 70, shinyCaps: 3, stage: 'kit', isSleeping: false, trashCollected: 0 };
+        if (pet.isSleeping) toggleNap();
+        setLog("A fresh Jimothy crawled out of the bin.");
+        updateHUD();
+      } else if (opt.includes("AI FORAGE")) {
+        setLog("Calling the AI mothership...");
+        setTimeout(() => {
+          showReaction("🤖 *BEEP* Found Pizza!");
+          pet.hunger += 40; pet.grease += 20;
+          updateHUD();
+          setLog("AI spawned a digital pizza.");
+          sound.fanfare();
+        }, 1500);
+      }
+    }
+
+    function updateHUD() {
+      pet.hunger = Math.min(100, Math.max(0, pet.hunger));
+      pet.chaos = Math.min(100, Math.max(0, pet.chaos));
+      pet.grease = Math.min(100, Math.max(0, pet.grease));
+      pet.energy = Math.min(100, Math.max(0, pet.energy));
+
+      elements.hunger.textContent = `${Math.round(pet.hunger)}%`; elements.hungerBar.style.width = `${pet.hunger}%`;
+      elements.chaos.textContent = `${Math.round(pet.chaos)}%`; elements.chaosBar.style.width = `${pet.chaos}%`;
+      elements.grease.textContent = `${Math.round(pet.grease)}%`; elements.greaseBar.style.width = `${pet.grease}%`;
+      elements.energy.textContent = `${Math.round(pet.energy)}%`; elements.energyBar.style.width = `${pet.energy}%`;
+      elements.capsVal.textContent = pet.shinyCaps;
+
+      pet.trashCollected = pet.trashCollected || 0;
+      drawTrashPalace();
+
+      checkEvolution();
+      const now = new Date();
+      document.getElementById('timeClock').textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      saveState();
+    }
+
+    function throwTrashAtScreen() {
+      if (pet.inMiniGame || pet.isSleeping || isAnimatingThrow) return;
+      isAnimatingThrow = true;
+      
+      const projectiles = [
+        { emoji: "🍅", type: "splat", log: "a rotten tomato" },
+        { emoji: "🪨", type: "crack", log: "a heavy rock" },
+        { emoji: "🥦", type: "glitch", log: "cursed broccoli" },
+        { emoji: "🥫", type: "crack", log: "a soup can" }
+      ];
+      
+      const proj = projectiles[Math.floor(Math.random() * projectiles.length)];
+      sound.thud();
+      elements.graphic.classList.remove('idle-anim');
+      elements.graphic.style.transform = 'scale(1.5) translateY(10px)';
+      
+      setTimeout(() => {
+        elements.graphic.style.transform = 'scale(1)';
+        sound.hiss();
+        showReaction("🤬 *YEET*");
+        setLog(`Jimothy threw ${proj.log} at the screen!`);
+        
+        if (proj.type === 'splat') {
+           elements.screenSplat.classList.remove('hidden');
+           elements.screenSplat.classList.add('flex');
+           elements.splatGraphic.textContent = proj.emoji;
+           elements.splatGraphic.classList.add('splat-drip');
+        } else if (proj.type === 'crack') {
+           elements.screenCrack.classList.remove('hidden');
+        } else if (proj.type === 'glitch') {
+           elements.lcdScreen.classList.add('glitch-effect');
+        }
+      }, 300);
+
+      setTimeout(() => {
+         elements.screenSplat.classList.add('hidden');
+         elements.screenSplat.classList.remove('flex');
+         elements.splatGraphic.classList.remove('splat-drip');
+         elements.screenCrack.classList.add('hidden');
+         elements.lcdScreen.classList.remove('glitch-effect');
+         
+         if (!pet.isSleeping) elements.graphic.classList.add('idle-anim');
+         isAnimatingThrow = false;
+      }, 4000);
+    }
+
+    function triggerRandomAntics() {
+      const events = [
+        { text: "Chewed through an HDMI cable!", chaos: +10 },
+        { text: "Broke into the mainframe!", hunger: +10, chaos: +12 },
+        { text: "Hacked the Pentagon using a half-eaten modem.", chaos: +25 },
+        { text: "Knocked over a virtual potted plant.", chaos: +12 }
+      ];
+      const ev = events[Math.floor(Math.random() * events.length)];
+      if (ev.chaos) pet.chaos += ev.chaos;
+      if (ev.hunger) pet.hunger += ev.hunger;
+      showReaction("👀 *CRASH!*");
+      setLog(ev.text);
+      sound.beep();
+    }
+
+    let dreamInterval = null;
+    const dreamEmojis = ["🌭", "🚗", "🔪", "🍕", "💰", "👑", "🐀", "🗑️", "🍗", "🥪"];
+    const dreamTexts = [
+      "Dreaming of an infinite hotdog...",
+      "Dreaming of stealing a sports car...",
+      "Dreaming of knife fighting a possum...",
+      "Dreaming of a throne of pizza boxes...",
+      "Dreaming of tax evasion...",
+      "Dreaming of the perfect garbage bag...",
+      "Dreaming of chasing the neighbor's dog...",
+      "Dreaming of the holy grail of grease..."
+    ];
+
+    function cycleDreams() {
+      if (!pet.isSleeping) return;
+      document.getElementById('dreamIcon').textContent = dreamEmojis[Math.floor(Math.random() * dreamEmojis.length)];
+      setLog(dreamTexts[Math.floor(Math.random() * dreamTexts.length)]);
+    }
+
+    setInterval(() => {
+      pet.ageMinutes += 1;
+      if (pet.isSleeping) {
+        pet.energy = Math.min(100, pet.energy + 8);
+        // Hunger, chaos, and grease are COMPLETELY PAUSED while sleeping!
+      } else {
+        pet.hunger = Math.max(0, pet.hunger - 2.5);
+        pet.chaos = Math.min(100, pet.chaos + 2);
+        pet.grease = Math.max(0, pet.grease - 1);
+        pet.energy = Math.max(0, pet.energy - 1.5);
+
+        // Throw condition logic!
+        if (pet.chaos >= 60 && pet.hunger < 50 && Math.random() < 0.4) {
+            if (!isAnimatingThrow) throwTrashAtScreen();
+        } else if (Math.random() < 0.25) {
+          triggerRandomAntics();
+        } else {
+          // Passive trash collection when unsupervised
+          pet.trashCollected = (pet.trashCollected || 0) + 1;
+          drawTrashPalace();
+        }
+      }
+      updateHUD();
+    }, 10000);
+
+    function toggleNap() {
+      if (pet.inMiniGame) return;
+      pet.isSleeping = !pet.isSleeping;
+      
+      const dreamBubble = document.getElementById('dreamBubble');
+      
+      if (pet.isSleeping) {
+        elements.graphic.classList.remove('idle-anim');
+        elements.eyes.style.display = 'none';
+        elements.sleepZzz.style.display = 'block';
+        if (dreamBubble) {
+          dreamBubble.classList.remove('hidden');
+          dreamBubble.classList.add('flex');
+        }
+        showReaction("💤 Snoring...");
+        cycleDreams();
+        dreamInterval = setInterval(cycleDreams, 3500);
+        sound.beep();
+      } else {
+        elements.graphic.classList.add('idle-anim');
+        elements.eyes.style.display = 'block';
+        elements.sleepZzz.style.display = 'none';
+        if (dreamBubble) {
+          dreamBubble.classList.add('hidden');
+          dreamBubble.classList.remove('flex');
+        }
+        if (dreamInterval) clearInterval(dreamInterval);
+        showReaction("👀 Awake!");
+        setLog("Jimothy's eyes popped open.");
+        sound.beep();
+      }
+    }
+
+    let miniGameInterval = null;
+    let miniGameTimerVal = 15;
+    let dogWaking = 0;
+    let cansTipped = 0;
+
+    function initMiniGame() {
+      if (pet.energy < 15) { showReaction("Too tired!"); sound.thud(); return; }
+      pet.inMiniGame = true;
+      miniGameTimerVal = 15;
+      cansTipped = 0;
+      dogWaking = 0;
+      document.getElementById('miniGameScreen').classList.remove('hidden');
+      document.getElementById('miniGameScreen').classList.add('flex');
+      document.getElementById('gameTitle').textContent = "MIDNIGHT RAID";
+      renderGameScreen();
+
+      miniGameInterval = setInterval(() => {
+        miniGameTimerVal--;
+        document.getElementById('gameTimer').textContent = `TIME: ${miniGameTimerVal}s`;
+        if (Math.random() > 0.45) dogWaking++;
+        renderGameScreen();
+
+        if (dogWaking >= 4) {
+          endMiniGame(false, "BARK! The neighbor's dog chased you away!");
+        } else if (miniGameTimerVal <= 0) {
+          endMiniGame(true, `Secured ${cansTipped} bins of trash!`);
+        }
+      }, 1000);
+    }
+
+    function renderGameScreen() {
+      const arena = document.getElementById('gameArena');
+      const dogIcons = ["😴 Zzz", "🐕 Stirring", "👀 Watching!", "🚨 BARKING!"];
+      arena.innerHTML = `
+        <div class="w-full h-full flex flex-col justify-between p-2" style="color: var(--lcd-pixel);">
+          <div class="flex justify-between text-[7px] font-bold">
+            <span>BINS: ${cansTipped}</span>
+            <span>${dogIcons[Math.min(3, dogWaking)]}</span>
+          </div>
+          <div class="flex items-center justify-around text-2xl py-1">
+            <span class="text-xl">🦝</span>
+            <span class="text-3xl animate-bounce">🗑️</span>
+            <span class="text-[7px] font-bold px-1 py-0.5 rounded border" style="border-color: var(--lcd-pixel);">
+              ${dogWaking > 1 ? "⚠️ HIDE (B)" : "LOOT (A)"}
+            </span>
+          </div>
+          <div class="w-full h-1.5 rounded overflow-hidden" style="background-color: var(--lcd-ui);">
+            <div class="h-full transition-all duration-300" style="background-color: var(--lcd-pixel); width: ${(dogWaking / 4) * 100}%;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function miniGameHandleButton(btn) {
+      if (btn === 'A') {
+        if (dogWaking >= 3) {
+          sound.hiss();
+          dogWaking += 2; // Instant punish for looting while watched
+          renderGameScreen();
+        } else {
+          sound.munch();
+          cansTipped++;
+          dogWaking = Math.min(3, dogWaking + 1);
+          renderGameScreen();
+        }
+      } else if (btn === 'B') {
+        sound.scuttle();
+        dogWaking = Math.max(0, dogWaking - 1); // Hide and calm down
+        renderGameScreen();
+      }
+    }
+
+    function endMiniGame(won, message) {
+      clearInterval(miniGameInterval);
+      pet.inMiniGame = false;
+      document.getElementById('miniGameScreen').classList.add('hidden');
+      document.getElementById('miniGameScreen').classList.remove('flex');
+      pet.energy -= 20;
+
+      if (won) {
+        sound.fanfare();
+        let loot = cansTipped * 15;
+        pet.trashCollected = (pet.trashCollected || 0) + loot;
+        pet.chaos += 10;
+        pet.grease += 5;
+        showReaction(`👑 +${loot} TRASH!`);
+      } else {
+        document.getElementById('jimothyGraphic').classList.remove('idle-anim');
+        document.getElementById('jimothyGraphic').classList.add('shake-anim');
+        setTimeout(() => { 
+            document.getElementById('jimothyGraphic').classList.remove('shake-anim'); 
+            if (!pet.isSleeping) document.getElementById('jimothyGraphic').classList.add('idle-anim');
+        }, 700);
+        showReaction("💨 SCRAMBLED!");
+      }
+      setLog(message);
+      updateHUD();
+    }
+
+    function drawTrashPalace() {
+      const tc = pet.trashCollected || 0;
+      const g = document.getElementById('trashPalaceGroup');
+      if (!g) return;
+      
+      let level = 0;
+      if (tc > 50) level = 1;
+      if (tc > 150) level = 2;
+      if (tc > 350) level = 3;
+
+      let html = '';
+      if (level >= 1) {
+        // Base cardboard box
+        html += `<rect x="5" y="45" width="25" height="20" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="5" y1="48" x2="30" y2="48" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <text x="7" y="58" font-size="6" font-family="monospace" fill="var(--lcd-pixel)">FRAGILE</text>`;
+      }
+      if (level >= 2) {
+        // Add a tire and some stacked cans
+        html += `<circle cx="35" cy="55" r="8" fill="none" stroke-width="2" stroke="var(--lcd-pixel)"/>
+                 <circle cx="35" cy="55" r="4" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <rect x="10" y="35" width="8" height="10" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>
+                 <rect x="18" y="37" width="8" height="8" fill="none" stroke-width="1" stroke="var(--lcd-pixel)"/>`;
+      }
+      if (level >= 3) {
+        // Full blown throne canopy (umbrella, fairy lights)
+        html += `<path d="M 5,30 Q 20,10 35,30 Z" fill="none" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <line x1="20" y1="30" x2="20" y2="45" stroke-width="1.5" stroke="var(--lcd-pixel)"/>
+                 <!-- fairy lights string -->
+                 <path d="M 0,25 Q 15,35 35,25" fill="none" stroke-dasharray="2,3" stroke-width="1" stroke="var(--lcd-pixel)"/>`;
+      }
+      g.innerHTML = html;
+      g.style.opacity = '0.35'; // Blend into background
+    }
+
+    btnMenu.addEventListener('click', () => {
+      toggleMenu();
+    });
+
+    btnA.addEventListener('click', () => {
+      sound.beep();
+      if (isMenuOpen) {
+        executeMenuOption();
+        return;
+      }
+      if (pet.inMiniGame) {
+        miniGameHandleButton('A');
+        return;
+      }
+      if (pet.isSleeping) return;
+      const food = TRASH_MENU[currentFoodIdx];
+      currentFoodIdx = (currentFoodIdx + 1) % TRASH_MENU.length;
+      if (food.isGross) {
+        elements.graphic.classList.remove('idle-anim');
+        elements.graphic.classList.add('shake-anim');
+        setTimeout(() => { elements.graphic.classList.remove('shake-anim'); elements.graphic.classList.add('idle-anim'); }, 700);
+        showReaction("🤮 GROSS!");
+        sound.hiss();
+      } else {
+        sound.munch();
+        showReaction(`*NOM* ${food.name}!`);
+      }
+      pet.hunger += food.hunger; pet.chaos += food.chaos; pet.grease += food.grease;
+      setLog(food.desc);
+      updateHUD();
+    });
+
+    btnB.addEventListener('click', () => {
+      sound.beep();
+      if (isMenuOpen) {
+        toggleMenu(); // B cancels/exits the menu
+        return;
+      }
+      if (pet.inMiniGame) {
+        miniGameHandleButton('B');
+        return;
+      }
+      if (pet.isSleeping) return;
+      initMiniGame();
+    });
+
+    btnSelect.addEventListener('click', () => { sound.beep(); toggleNap(); });
+    
+    btnStart.addEventListener('click', () => {
+      sound.scuttle();
+      if (pet.isSleeping) return;
+      pet.grease = Math.min(100, pet.grease + 25);
+      showReaction("✨ Fresh Grime!");
+      setLog("Coated Jimothy in warm, linty goodness.");
+      updateHUD();
+    });
+
+    // D-Pad Mapping (Poke mechanic or Menu Navigation)
+    const pokeAction = () => {
+       if (pet.isSleeping || isMenuOpen) return;
+       sound.scuttle(); pet.chaos += 2;
+       showReaction("🐾 *GNAW!*"); setLog("Jimothy bit your finger.");
+       updateHUD();
+    };
+    
+    document.getElementById('dpadUp').addEventListener('click', () => {
+      if (isMenuOpen) { sound.beep(); menuIndex = Math.max(0, menuIndex - 1); renderMenu(); } 
+      else pokeAction();
+    });
+    
+    document.getElementById('dpadDown').addEventListener('click', () => {
+      if (isMenuOpen) { sound.beep(); menuIndex = Math.min(MENU_OPTIONS.length - 1, menuIndex + 1); renderMenu(); } 
+      else pokeAction();
+    });
+    
+    document.getElementById('dpadLeft').addEventListener('click', pokeAction);
+    document.getElementById('dpadRight').addEventListener('click', pokeAction);
+
+    document.getElementById('deviceToggleBtn').addEventListener('click', () => {
+      sound.beep(); prefs.shapeIdx = (prefs.shapeIdx + 1) % SHAPES.length; applyPrefs(); showReaction("📱 Shape Changed", 1000);
+    });
+    document.getElementById('colorToggleBtn').addEventListener('click', () => {
+      sound.beep(); prefs.themeIdx = (prefs.themeIdx + 1) % THEMES.length; applyPrefs(); showReaction(`🎨 ${THEMES[prefs.themeIdx].name} Theme`, 1000);
+    });
+    document.getElementById('lcdToggleBtn').addEventListener('click', () => {
+      sound.beep(); prefs.lcdIdx = (prefs.lcdIdx + 1) % LCD_STYLES.length; applyPrefs(); showReaction(`💡 ${LCD_STYLES[prefs.lcdIdx].name} LCD`, 1000);
+    });
+    document.getElementById('soundToggleBtn').addEventListener('click', (e) => {
+      const isMuted = sound.toggleMute();
+      e.target.textContent = isMuted ? '🔇' : '🔊';
+      if (!isMuted) sound.beep();
+    });
+
+    // Keyboard bindings
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      if (e.key === 'ArrowUp') document.getElementById('dpadUp').click();
+      if (e.key === 'ArrowDown') document.getElementById('dpadDown').click();
+      if (e.key === 'ArrowLeft') document.getElementById('dpadLeft').click();
+      if (e.key === 'ArrowRight') document.getElementById('dpadRight').click();
+      if (e.key.toLowerCase() === 'a' || e.key === '1') btnA.click();
+      if (e.key.toLowerCase() === 'b' || e.key === '2') btnB.click();
+    });
+
+    loadPrefs();
+    updateHUD();
+  </script>
+</body>
+</html>
