@@ -1,4 +1,4 @@
-🦝 Jimothy-Gotchi
+🦝 Jima-Gotchi
 
 🎮 PLAY JIMOTHY-GOTCHI LIVE HERE! 🎮
 
