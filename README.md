@@ -2,13 +2,13 @@
 
 🎮 PLAY JIMOTHY-GOTCHI LIVE HERE! 🎮
 
-Welcome to Jimothy-Gotchi, the ultimate 8-bit retro virtual pet experience where you are tasked with keeping a chaotic, trash-loving raccoon alive and slightly less greasy (but not too clean).
+Welcome to Jima-Gotchi, the ultimate 8-bit retro virtual pet experience where you are tasked with keeping a chaotic, trash-loving raccoon alive and slightly less greasy (but not too clean).
 
 Inspired by the handheld LCD pets of the late 90s, this single-file web application brings all the nostalgia of taking care of a demanding digital creature right to your browser.
 
 ✨ Features
 
-100% Single File: No external assets, no messy folders. Every pixel, sound, and line of logic is packed into a single, portable HTML file (jimothy_gotchi.html).
+100% Single File: No external assets, no messy folders. Every pixel, sound, and line of logic is packed into a single, portable HTML file (jimagotchi.html).
 
 Offline Progression & Persistent Saving: Close the tab? Jimothy remembers. His stats are saved locally via localStorage, and he will calculate time passed to age (and get hungry/chaotic) while you are offline!
 
