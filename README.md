@@ -1,5 +1,3 @@
-<img width="450" height="840" alt="unnamed" src="https://github.com/user-attachments/assets/53c64c75-d91a-42bd-9b11-50c0633abeca" />
-
 🦝 Jima-Gotchi
 
 🎮 PLAY JIMOTHY-GOTCHI LIVE HERE! 🎮
@@ -27,6 +25,8 @@ Evolution System: Feed him right and keep him filthy. Jimothy evolves through di
 Google Chat Integration: Hook Jimothy up to a Google Chat Webhook to let him spam your team channel with his chaotic antics and evolution announcements.
 
 Gemini AI Dumpster: Let an AI hallucinate weird, wonderful, and disgusting pieces of trash for Jimothy to eat! (Requires API Key configuration)
+
+<img width="450" height="840" alt="unnamed" src="https://github.com/user-attachments/assets/53c64c75-d91a-42bd-9b11-50c0633abeca" />
 
 🎮 How to Play
 
