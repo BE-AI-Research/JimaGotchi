@@ -1,4 +1,4 @@
-<img width="368" height="960" alt="unnamed" src="https://github.com/user-attachments/assets/53c64c75-d91a-42bd-9b11-50c0633abeca" />
+<img width="450" height="840" alt="unnamed" src="https://github.com/user-attachments/assets/53c64c75-d91a-42bd-9b11-50c0633abeca" />
 
 🦝 Jima-Gotchi
 
